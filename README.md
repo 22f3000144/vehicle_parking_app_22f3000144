@@ -1,2 +1,3 @@
-# vehicle_parking_app_22f3000144
-This is MAD 2 Project 2025 from IITM Madras. 
+# Mad2 Project
+
+Simple Parking application Which support both admin and user features.
