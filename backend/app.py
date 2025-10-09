@@ -5,7 +5,6 @@ from flask_security import SQLAlchemyUserDatastore, Security,hash_password
 from flask_restful import Api
 import os
 from flask_cors import CORS
-from celery.schedules import crontab
 # import application.clry as clry
 # from application.cache import cache
 # from application.tasks import daily_reminder, monthly_reminder
@@ -63,16 +62,16 @@ def timee():
     return datetime.datetime.now(pytz.timezone('Asia/Kolkata')) 
 
 
-@celery.on_after_finalize.connect
-def monthly_report(sender, **kwargs):
-    sender.add_periodic_task(
-        crontab(hour=20, minute=15, day_of_month="9", nowfun=timee),
-        monthly_reminder.s(),
-    )
-    sender.add_periodic_task(
-        crontab(hour=20, minute=17, day_of_week='*', nowfun=timee),
-        daily_reminder.s(),
-    )
+# @celery.on_after_finalize.connect
+# def monthly_report(sender, **kwargs):
+#     sender.add_periodic_task(
+#         crontab(hour=20, minute=15, day_of_month="9", nowfun=timee),
+#         monthly_reminder.s(),
+#     )
+#     sender.add_periodic_task(
+#         crontab(hour=20, minute=17, day_of_week='*', nowfun=timee),
+#         daily_reminder.s(),
+#     )
 
 celery.conf.timezone = 'Asia/Kolkata'
 
