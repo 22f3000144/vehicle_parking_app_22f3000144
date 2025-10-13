@@ -1,22 +1,54 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Enum
-
 from datetime import datetime
-db = SQLAlchemy() 
+from flask_security import UserMixin, RoleMixin
+from sqlalchemy import Enum
+import uuid
+
+db = SQLAlchemy()  
 
 
-class User(db.Model):
+
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    address = db.Column(db.String(200))
+    email = db.Column(db.String(200))
     model = db.Column(db.String(100))  # Car model
-    password = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(10), nullable=False, default='user')  # 'admin' or 'user'
-    
-    # One-to-Many: User → ReserveParking
+    password = db.Column(db.String(255), nullable=False)
+
+    unique_id = db.Column(db.String(250), unique=True, nullable=False)
+    token_id = db.Column(db.String(250), unique=True, nullable=False)
+
+    # 👇 Required by Flask-Security 4.x
+    fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+
+    # Relationships
     reservations = db.relationship('ReserveParking', backref='user', cascade="all, delete", passive_deletes=True)
+
+    def __repr__(self):
+        return f"<User {self.username}>"
+
+
+class Role(db.Model, RoleMixin):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+    def __repr__(self):
+        return f"<role {self.name}>"
+    
+class UserRole(db.Model):
+    __tablename__ = 'userrole'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+
+    def __repr__(self):
+        return f"<userrole user_id={self.user_id} role_id={self.role_id}>"
+
 
 
 class ParkingLot(db.Model):
@@ -31,7 +63,6 @@ class ParkingLot(db.Model):
     # One-to-Many: ParkingLot → ParkingSpot
     spots = db.relationship('ParkingSpot', backref='lot', cascade='all, delete-orphan', passive_deletes=True)
 
-
 class ParkingSpot(db.Model):
     __tablename__ = 'parkingspot'
 
@@ -41,7 +72,7 @@ class ParkingSpot(db.Model):
     # One-to-Many: ParkingSpot → ReserveParking
     reservations = db.relationship('ReserveParking', backref='spot', cascade="all, delete", passive_deletes=True)
 
-from datetime import datetime
+
 
 class ReserveParking(db.Model):
     __tablename__ = 'reserveparking'
@@ -55,3 +86,6 @@ class ReserveParking(db.Model):
     leaving_timestamp = db.Column(db.DateTime, nullable=True)
 
     parking_cost = db.Column(db.Float, nullable=True)  # cost is calculated after release
+
+    def __repr__(self):
+        return f"<ReserveParking id={self.id} user_id={self.user_id} spot_id={self.spot_id}>"
