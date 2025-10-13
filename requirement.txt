@@ -1,4 +1,6 @@
 
+
+bleach
 texttable==1.6.4
 tinycss2==1.1.1
 vine==5.0.0
