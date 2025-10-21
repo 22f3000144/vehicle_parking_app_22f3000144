@@ -1,8 +1,8 @@
 import os
 from flask import Flask
-from flask_restful import Api
+from flask_restful import Api, Resource
 from flask_security import Security, SQLAlchemySessionUserDatastore
-from settings import LocalDevelopmentConfig
+from controllers.settings import LocalDevelopmentConfig
 from data.models import *
 from flask_jwt_extended import JWTManager
 from flask_caching import Cache
@@ -46,15 +46,13 @@ def create_admin_user(app, user_datastore):
             db.session.add(user_role)
             db.session.commit()
 
-      
-
 def create_app():
-    app = Flask(__name__, template_folder="templates")
+    app = Flask(__name__)
     app.config.from_object(LocalDevelopmentConfig)
 
     # Initialize extensions
     db.init_app(app)
-    api = Api(app)
+    api = Api(app, prefix="/api")
     jwt = JWTManager(app)
     cache = Cache(app)
 
@@ -62,9 +60,6 @@ def create_app():
     user_datastore = SQLAlchemySessionUserDatastore(db.session, User, Role)
     app.security = Security(app, user_datastore)
 
-    # # Celery setup
-    # from jobs import workers
-    # from workers import celery
 
 
     # Create DB and admin user
@@ -74,10 +69,21 @@ def create_app():
 
     return app, api, celery, cache
 
-
+      
 app, api, celery, cache = create_app()
 
+@app.route("/is_run")
+def is_run():
+    return {
+        "message": "Backend is running"
+    }, 200
+
+from controllers.auth_apis import *
+
+api.add_resource(Index, "/")
+api.add_resource(LoginAPI, "/login")
 
 
 if __name__ == "__main__":
+
     app.run(debug=True)
