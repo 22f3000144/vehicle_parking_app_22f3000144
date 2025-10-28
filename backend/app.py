@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask_restful import Api, Resource
 from flask_security import Security, SQLAlchemySessionUserDatastore
-from controllers.settings import LocalDevelopmentConfig
+from controllers.settings import LocalDevelopmentConfig, Config
 from data.models import *
 from flask_jwt_extended import JWTManager
 from flask_caching import Cache
@@ -72,7 +72,7 @@ def create_app():
       
 app, api, celery, cache = create_app()
 
-@app.route("/is_run")
+@app.route("/")
 def is_run():
     return {
         "message": "Backend is running"
@@ -80,9 +80,28 @@ def is_run():
 
 from controllers.auth_apis import *
 
+
 api.add_resource(Index, "/")
 api.add_resource(LoginAPI, "/login")
+api.add_resource(RegisterAPI, "/resitration")
+api.add_resource(ProfileAPI, "/profile")
 
+from controllers.crud_apis import *
+# User
+api.add_resource(UserListAPI, '/api/users')
+api.add_resource(UserAPI, '/api/users/<int:user_id>')
+
+# Parking Lots
+api.add_resource(ParkingLotListAPI, '/api/lots')
+api.add_resource(ParkingLotAPI, '/api/lots/<int:lot_id>')
+
+# Parking Spots
+api.add_resource(ParkingSpotListAPI, '/api/spots')
+api.add_resource(ParkingSpotAPI, '/api/spots/<int:spot_id>')
+
+# Realese and occupied
+api.add_resource(ReserveParkingAPI, '/api/reserve')
+api.add_resource(ReleaseParkingAPI, '/api/release')
 
 if __name__ == "__main__":
 
