@@ -1,0 +1,170 @@
+<template>
+  <div class="p-4 bg-light" id="admin-body">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 mb-4" id="admin-nav">
+      <div class="navbar-nav w-100 d-flex justify-content-between align-items-center">
+        <div>
+          <a class="navbar-brand fw-bold">Admin Panel</a>
+          <router-link to="/admin" class="nav-link d-inline text-white">Home</router-link>
+          <router-link to="/userlist" class="nav-link d-inline text-white">Users</router-link>
+          <router-link to="/admin-summary" class="nav-link d-inline text-white">Summary</router-link>
+        </div>
+        <button @click="logout" class="btn btn-outline-light btn-sm">Log-out</button>
+      </div>
+    </nav>
+
+    <!-- Table Section -->
+    <div class="container" id="admin-table-container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-dark">Parking Lots</h3>
+        <router-link to="/add-parking-lot" class="btn btn-success btn-sm">
+          + Add Parking Lot
+        </router-link>
+      </div>
+
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <table
+        v-else
+        class="table table-bordered table-striped table-hover bg-white shadow-sm"
+        id="parking-lot-table"
+      >
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Location</th>
+            <th>Price</th>
+            <th>Address</th>
+            <th>Pin Code</th>
+            <th>Max Spots</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="lot in parkingLots" :key="lot.id">
+            <td>{{ lot.id }}</td>
+            <td>{{ lot.prime_location_name }}</td>
+            <td>{{ lot.price }}</td>
+            <td>{{ lot.address }}</td>
+            <td>{{ lot.pin_code }}</td>
+            <td>{{ lot.max_spot }}</td>
+            <td>
+              <router-link
+                :to="`/lot-detail/${lot.id}`"
+                class="btn btn-sm btn-secondary me-1"
+              >
+                Detail
+              </router-link>
+              <router-link
+                :to="`/edit-lot/${lot.id}`"
+                class="btn btn-sm btn-warning me-1"
+              >
+                Edit
+              </router-link>
+              <button
+                @click="deleteLot(lot.id)"
+                class="btn btn-sm btn-danger"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+          <tr v-if="!parkingLots.length">
+            <td colspan="7" class="text-center text-muted">
+              No parking lots available.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import axios from "axios"
+import { ref, onMounted } from "vue"
+import { useRouter } from "vue-router"
+
+const router = useRouter()
+const parkingLots = ref([])
+const loading = ref(true)
+
+// ✅ Fetch parking lots from backend
+async function fetchParkingLots() {
+  try {
+    const token = localStorage.getItem("token")
+    const res = await axios.get("http://127.0.0.1:5000/api/lots", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    parkingLots.value = res.data
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to load parking lots")
+  } finally {
+    loading.value = false
+  }
+}
+
+// ✅ Delete lot
+async function deleteLot(lotId) {
+  if (!confirm("Are you sure you want to delete this lot?")) return
+
+  try {
+    const token = localStorage.getItem("token")
+    const res = await axios.delete(`http://127.0.0.1:5000/api/lots/${lotId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (res.status === 200) {
+      parkingLots.value = parkingLots.value.filter((lot) => lot.id !== lotId)
+      alert("Parking lot deleted successfully.")
+    }
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to delete lot. Ensure lot is empty.")
+  }
+}
+
+// ✅ Logout handler
+function logout() {
+  localStorage.removeItem("token")
+  localStorage.removeItem("role")
+  router.push("/login")
+}
+
+onMounted(fetchParkingLots)
+</script>
+
+<style scoped>
+#admin-body {
+  min-height: 100vh;
+}
+
+.nav-link {
+  cursor: pointer;
+}
+
+.table {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  #admin-body {
+    padding: 1rem;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  nav .navbar-brand {
+    font-size: 1rem;
+  }
+
+  .btn {
+    font-size: 0.8rem;
+  }
+}
+</style>

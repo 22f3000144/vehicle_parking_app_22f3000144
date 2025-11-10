@@ -1,11 +1,11 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+// import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+    <img alt="Vue logo" class="logo" src="@/assets/logo.png" width="150" height="150" />
 
     <div class="wrapper">
       <HelloWorld msg="Welcome In Parking App" />
@@ -14,7 +14,7 @@ import HelloWorld from './components/HelloWorld.vue'
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/login">Login</RouterLink>
-        <RouterLink to="/resisteration">Sine-In</RouterLink>
+        <RouterLink to="/registration">Sine-In</RouterLink>
       </nav>
     </div>
   </header>

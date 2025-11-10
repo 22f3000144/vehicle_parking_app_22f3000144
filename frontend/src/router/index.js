@@ -1,32 +1,37 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 // Views
+
 import HomeView from '../views/HomeView.vue'
-import ResisterView from '../views/ResisterView.vue'
+import RegisterView from '../views/RegisterView.vue'
 import LoginView from '../views/LoginView.vue'
-import UserDashboard from '../views/UserDashboard.vue'
-import AdminDashboard from '../views/AdminDashboard.vue'
+
+// User Components
+import UserDashboard from '../views/User/UserDashboard.vue'
+
+
+// admin components
+import AdminDashboard from '../views/Admin/AdminDashboard.vue'
+import UserDetail from '../views/Admin/UserDetail.vue'
+import AddParkingLot from '../views/Admin/AddParkingLot.vue'
+import EditParkingLot from '../views/Admin/EditParkingLot.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView,
+  { path: '/', name: 'home', component: HomeView },
+  { path: '/about', name: 'about', component: AboutView },
+  { path: '/registration', name: 'register', component: RegisterView },
+  { path: '/login', name: 'login', component: LoginView },
+  { path: '/userlist', name: 'user_list', 
+    component: UserDetail, 
+    meta: { requiresAuth: true } 
   },
-  {
-    path: '/about',
-    name: 'about',
-    component: () => import('../views/AboutView.vue'),
+  { path: '/add-parking-lot', name: 'add_lot', 
+    component: AddParkingLot,
+     meta: { requiresAuth: true } 
   },
-  {
-    path: '/resisteration',
-    name: 'register',
-    component: () => import('../views/ResisterView.vue'),
-  },
-  {
-    path: '/login',
-    name: 'login',
-    component: LoginView,
+  { path: '/edit-lot/:id', name: 'edit_lot', 
+    component: EditParkingLot, 
+    meta: { requiresAuth: true } 
   },
   {
     path: '/user',
@@ -40,6 +45,7 @@ const routes = [
     component: AdminDashboard,
     meta: { requiresAuth: true },
   },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -53,10 +59,8 @@ router.beforeEach((to, from, next) => {
   const role = localStorage.getItem('role')
 
   if (to.meta.requiresAuth && !token) {
-    // Protected route but no token → redirect to login
     next({ name: 'login' })
   } else if (to.name === 'login' && token) {
-    // If logged in already → redirect based on role
     if (role === 'admin') next({ name: 'admin_dashboard' })
     else next({ name: 'user_dashboard' })
   } else {

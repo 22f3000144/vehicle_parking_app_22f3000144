@@ -22,7 +22,8 @@ flask-restful
 flask-jwt-extended
 Flask-Cache==0.13.1
 Flask-Caching==2.0.1
-Flask-Cors==3.0.10
+
+flask_cors
 Flask-Excel==0.0.7
 Flask-Ext==0.1
 Flask-Login==0.6.2

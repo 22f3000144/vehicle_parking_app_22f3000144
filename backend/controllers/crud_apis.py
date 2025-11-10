@@ -1,15 +1,30 @@
 # routes/crud_apis.py
 from flask_restful import Resource
 from flask import request, jsonify, make_response
-from flask_security import auth_required, roles_required, current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from data.models import db, User, ParkingLot, ParkingSpot
+from datetime import datetime
 
-# -----------------------------
+# ---------------------------------------
+# Helper: Check if current user is admin
+# ---------------------------------------
+def require_admin():
+    uid = get_jwt_identity()
+    user = User.query.get(uid)
+    if not user or not any(r.name == 'admin' for r in user.roles):
+        return None
+    return user
+
+# =======================================================
 # USER CRUD (Admin-only)
-# -----------------------------
+# =======================================================
 class UserListAPI(Resource):
-    @roles_required('admin')
+    @jwt_required()
     def get(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         users = User.query.all()
         data = [{
             "id": u.id,
@@ -20,8 +35,12 @@ class UserListAPI(Resource):
         } for u in users]
         return make_response(jsonify(data), 200)
 
-    @roles_required('admin')
+    @jwt_required()
     def post(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         data = request.get_json()
         if not data:
             return make_response(jsonify({"message": "Missing data"}), 400)
@@ -45,8 +64,12 @@ class UserListAPI(Resource):
 
 
 class UserAPI(Resource):
-    @roles_required('admin')
+    @jwt_required()
     def get(self, user_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         user = User.query.get_or_404(user_id)
         data = {
             "id": user.id,
@@ -57,111 +80,158 @@ class UserAPI(Resource):
         }
         return make_response(jsonify(data), 200)
 
-    @roles_required('admin')
+    @jwt_required()
     def put(self, user_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         data = request.get_json()
         user = User.query.get_or_404(user_id)
 
         user.username = data.get('username', user.username)
         user.email = data.get('email', user.email)
         user.model = data.get('model', user.model)
-
         db.session.commit()
+
         return make_response(jsonify({"message": "User updated"}), 200)
 
-    @roles_required('admin')
+    @jwt_required()
     def delete(self, user_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         user = User.query.get_or_404(user_id)
         db.session.delete(user)
         db.session.commit()
         return make_response(jsonify({"message": "User deleted"}), 200)
 
 
-# -----------------------------
+# =======================================================
 # PARKING LOT CRUD (Admin-only)
-# -----------------------------
+# =======================================================
 class ParkingLotListAPI(Resource):
-    @roles_required('admin')
+    @jwt_required()
     def get(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         lots = ParkingLot.query.all()
         data = [{
             "id": lot.id,
-            "name": lot.name,
-            "location": lot.location,
-            "capacity": lot.capacity
+            "prime_location_name": lot.prime_location_name,
+            "price": lot.price,
+            "address": lot.address,
+            "pin_code": lot.pin_code,
+            "max_spot": lot.max_spot
         } for lot in lots]
         return make_response(jsonify(data), 200)
 
-    @roles_required('admin')
+    @jwt_required()
     def post(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         data = request.get_json()
         if not data:
             return make_response(jsonify({"message": "Missing data"}), 400)
 
-        name = data.get('name')
-        location = data.get('location')
-        capacity = data.get('capacity', 0)
+        prime_location_name = data.get('prime_location_name')
+        price = data.get('price')
+        address = data.get('address')
+        pin_code = data.get('pin_code')
+        max_spot = data.get('max_spot')
 
-        if not name or not location:
-            return make_response(jsonify({"message": "Name and location required"}), 400)
+        if not prime_location_name or not price or not address or not pin_code or not max_spot:
+            return make_response(jsonify({"message": "All fields are required"}), 400)
 
-        new_lot = ParkingLot(name=name, location=location, capacity=capacity)
+        new_lot = ParkingLot(
+            prime_location_name=prime_location_name,
+            price=price,
+            address=address,
+            pin_code=pin_code,
+            max_spot=max_spot
+        )
         db.session.add(new_lot)
         db.session.commit()
 
         # Auto-generate parking spots
-        for i in range(capacity):
+        for i in range(new_lot.max_spot):
             spot = ParkingSpot(lot_id=new_lot.id, spot_number=i + 1, status="available")
             db.session.add(spot)
         db.session.commit()
 
-        return make_response(jsonify({"message": "Parking lot created with spots"}), 201)
+        return make_response(jsonify({"message": "Parking lot created successfully"}), 201)
 
 
 class ParkingLotAPI(Resource):
-    @roles_required('admin')
+    @jwt_required()
     def get(self, lot_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         lot = ParkingLot.query.get_or_404(lot_id)
         spots = ParkingSpot.query.filter_by(lot_id=lot.id).all()
         data = {
             "id": lot.id,
-            "name": lot.name,
-            "location": lot.location,
-            "capacity": lot.capacity,
-            "spots": [{"id": s.id, "spot_number": s.spot_number, "status": s.status} for s in spots]
+            "prime_location_name": lot.prime_location_name,
+            "price": lot.price,
+            "address": lot.address,
+            "pin_code": lot.pin_code,
+            "max_spot": lot.max_spot,
+            "spots": [
+                {"id": s.id, "spot_number": s.spot_number, "status": s.status}
+                for s in spots
+            ]
         }
         return make_response(jsonify(data), 200)
 
-    @roles_required('admin')
+    @jwt_required()
     def put(self, lot_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         data = request.get_json()
         lot = ParkingLot.query.get_or_404(lot_id)
 
-        lot.name = data.get('name', lot.name)
-        lot.location = data.get('location', lot.location)
-        lot.capacity = data.get('capacity', lot.capacity)
+        lot.prime_location_name = data.get('prime_location_name', lot.prime_location_name)
+        lot.price = data.get('price', lot.price)
+        lot.address = data.get('address', lot.address)
+        lot.pin_code = data.get('pin_code', lot.pin_code)
+        lot.max_spot = data.get('max_spot', lot.max_spot)
+
         db.session.commit()
+        return make_response(jsonify({"message": "Parking lot updated successfully"}), 200)
 
-        return make_response(jsonify({"message": "Parking lot updated"}), 200)
-
-    @roles_required('admin')
+    @jwt_required()
     def delete(self, lot_id):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
         lot = ParkingLot.query.get_or_404(lot_id)
         spots = ParkingSpot.query.filter_by(lot_id=lot.id).all()
         if any(s.status == "occupied" for s in spots):
             return make_response(jsonify({"message": "Cannot delete lot with occupied spots"}), 400)
+
         for s in spots:
             db.session.delete(s)
         db.session.delete(lot)
         db.session.commit()
-        return make_response(jsonify({"message": "Parking lot deleted"}), 200)
+
+        return make_response(jsonify({"message": "Parking lot deleted successfully"}), 200)
 
 
-# -----------------------------
+# =======================================================
 # PARKING SPOT CRUD (Admin + User)
-# -----------------------------
+# =======================================================
 class ParkingSpotListAPI(Resource):
-    @auth_required("token")
+    @jwt_required()
     def get(self):
         spots = ParkingSpot.query.all()
         data = [{
@@ -174,31 +244,35 @@ class ParkingSpotListAPI(Resource):
 
 
 class ParkingSpotAPI(Resource):
-    @auth_required("token")
+    @jwt_required()
     def put(self, spot_id):
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
         data = request.get_json()
         spot = ParkingSpot.query.get_or_404(spot_id)
 
-        # Allow users to occupy/release only their own assigned spot
-        if current_user.has_role('user'):
-            if data.get('status') not in ['available', 'occupied']:
-                return make_response(jsonify({"message": "Invalid status"}), 400)
-            spot.status = data.get('status')
+        if not data or 'status' not in data:
+            return {"message": "Status is required"}, 400
+
+        if any(r.name == 'user' for r in user.roles):
+            if data['status'] not in ['available', 'occupied']:
+                return {"message": "Invalid status"}, 400
+            spot.status = data['status']
         else:
-            # Admin can force status change
             spot.status = data.get('status', spot.status)
 
         db.session.commit()
         return make_response(jsonify({"message": "Spot updated"}), 200)
 
-from datetime import datetime
 
+# =======================================================
+# RESERVE & RELEASE PARKING (User actions)
+# =======================================================
 class ReserveParkingAPI(Resource):
-    @auth_required("token")
+    @jwt_required()
     def post(self):
-        """
-        Reserve the first available parking spot in a given lot.
-        """
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
         data = request.get_json()
         lot_id = data.get('lot_id')
 
@@ -209,45 +283,42 @@ class ReserveParkingAPI(Resource):
         if not lot:
             return make_response(jsonify({"message": "Invalid parking lot"}), 404)
 
-        # Find first available spot
         spot = ParkingSpot.query.filter_by(lot_id=lot.id, status="available").first()
         if not spot:
             return make_response(jsonify({"message": "No available spots in this lot"}), 400)
 
-        # Mark the spot as occupied
         spot.status = "occupied"
-        spot.user_id = current_user.id
+        spot.user_id = user.id
         spot.entry_time = datetime.now()
 
         db.session.commit()
 
         return make_response(jsonify({
             "message": "Parking spot reserved successfully",
-            "lot_name": lot.name,
+            "lot_name": lot.prime_location_name,
             "spot_number": spot.spot_number,
             "entry_time": spot.entry_time.strftime("%Y-%m-%d %H:%M:%S")
         }), 200)
 
 
 class ReleaseParkingAPI(Resource):
-    @auth_required("token")
+    @jwt_required()
     def post(self):
-        """
-        Release a user's currently occupied parking spot.
-        """
-        # Find user's occupied spot
-        spot = ParkingSpot.query.filter_by(user_id=current_user.id, status="occupied").first()
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
+
+        spot = ParkingSpot.query.filter_by(user_id=user.id, status="occupied").first()
         if not spot:
             return make_response(jsonify({"message": "No active reservation found"}), 404)
 
-        # Update timestamps and status
         spot.status = "available"
         spot.exit_time = datetime.now()
         spot.user_id = None
 
-        # Calculate parking duration (in minutes)
         duration = int((spot.exit_time - spot.entry_time).total_seconds() / 60)
-        cost = round(duration * 1.5, 2)  # simple rate per minute
+        lot = ParkingLot.query.get(spot.lot_id)
+        rate = lot.price if lot else 1.5
+        cost = round(duration * rate, 2)
 
         db.session.commit()
 
