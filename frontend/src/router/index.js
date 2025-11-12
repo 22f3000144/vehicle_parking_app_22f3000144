@@ -8,7 +8,7 @@ import LoginView from '../views/LoginView.vue'
 
 // User Components
 import UserDashboard from '../views/User/UserDashboard.vue'
-
+import ReserveParking from '../views/User/ReserveParking.vue'
 
 // admin components
 import AdminDashboard from '../views/Admin/AdminDashboard.vue'
@@ -18,18 +18,21 @@ import EditParkingLot from '../views/Admin/EditParkingLot.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
-  { path: '/about', name: 'about', component: AboutView },
   { path: '/registration', name: 'register', component: RegisterView },
   { path: '/login', name: 'login', component: LoginView },
   { path: '/userlist', name: 'user_list', 
     component: UserDetail, 
     meta: { requiresAuth: true } 
   },
-  { path: '/add-parking-lot', name: 'add_lot', 
+  { path: '/AddParking', name: 'AddParking', 
     component: AddParkingLot,
      meta: { requiresAuth: true } 
   },
-  { path: '/edit-lot/:id', name: 'edit_lot', 
+  { path: '/Reserve', name: 'Reserve', 
+    component: ReserveParking,
+     meta: { requiresAuth: true } 
+  },
+  { path: '/edit_lot/:id', name: 'edit_lot', 
     component: EditParkingLot, 
     meta: { requiresAuth: true } 
   },

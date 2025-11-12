@@ -1,10 +1,11 @@
 # routes/crud_apis.py
+
 from flask_restful import Resource
 from flask import request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from data.models import db, User, ParkingLot, ParkingSpot
+from data.models import db, User, ParkingLot, ParkingSpot, ReserveParking
 from datetime import datetime
-
+from sqlalchemy import func
 # ---------------------------------------
 # Helper: Check if current user is admin
 # ---------------------------------------
@@ -14,6 +15,7 @@ def require_admin():
     if not user or not any(r.name == 'admin' for r in user.roles):
         return None
     return user
+
 
 # =======================================================
 # USER CRUD (Admin-only)
@@ -329,3 +331,64 @@ class ReleaseParkingAPI(Resource):
             "duration_minutes": duration,
             "cost": cost
         }), 200)
+
+class UserSummaryChartAPI(Resource):
+    """User dashboard: monthly parking cost summary"""
+    @jwt_required()
+    def get(self, user_id):
+        uid = get_jwt_identity()
+        if uid != user_id:
+            return {"message": "Access denied"}, 403
+
+        user = User.query.get_or_404(user_id)
+
+        results = db.session.query(
+            func.strftime("%Y-%m", ReserveParking.parking_timestamp),
+            func.sum(ReserveParking.parking_cost)
+        ).filter_by(user_id=user.id).group_by(func.strftime("%Y-%m", ReserveParking.parking_timestamp)).all()
+
+        chart_data = {
+            "months": [r[0] for r in results],
+            "costs": [float(r[1] or 0) for r in results]
+        }
+        return make_response(jsonify(chart_data), 200)
+
+
+class AdminReservationChartAPI(Resource):
+    """Admin dashboard: reservations per parking lot"""
+    @jwt_required()
+    def get(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
+        results = db.session.query(
+            ParkingLot.prime_location_name,
+            func.count(ReserveParking.id)
+        ).join(ParkingLot.spots).join(ReserveParking, isouter=True).group_by(ParkingLot.id).all()
+
+        chart_data = {
+            "lots": [r[0] for r in results],
+            "reservations": [r[1] for r in results]
+        }
+        return make_response(jsonify(chart_data), 200)
+
+
+class AdminMostUsedLotChartAPI(Resource):
+    """Admin dashboard: most used parking lots"""
+    @jwt_required()
+    def get(self):
+        admin = require_admin()
+        if not admin:
+            return {"message": "Admin access required"}, 403
+
+        results = db.session.query(
+            ParkingLot.prime_location_name,
+            func.count(ReserveParking.id).label('total_reservations')
+        ).join(ParkingLot.spots).join(ReserveParking, isouter=True).group_by(ParkingLot.id).order_by(func.count(ReserveParking.id).desc()).all()
+
+        chart_data = {
+            "lots": [r[0] for r in results],
+            "reservations": [r[1] for r in results]
+        }
+        return make_response(jsonify(chart_data), 200)

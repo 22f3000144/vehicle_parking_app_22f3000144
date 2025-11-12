@@ -34,9 +34,7 @@
               <td>{{ user.email }}</td>
               <td>{{ user.model || '-' }}</td>
               <td>
-                <span
-                  :class="user.roles.includes('admin') ? 'badge bg-danger' : 'badge bg-secondary'"
-                >
+                <span :class="user.roles.includes('admin') ? 'badge bg-danger' : 'badge bg-secondary'">
                   {{ user.roles.join(', ') }}
                 </span>
               </td>
@@ -52,35 +50,37 @@
   </div>
 </template>
 
-<script setup>
-import axios from "axios"
-import { ref, onMounted } from "vue"
-import { useRouter } from "vue-router"
+<script>
+import axios from "axios";
 
-const router = useRouter()
-const users = ref([])
-
-// ✅ Fetch all users (admin only)
-async function fetchUsers() {
-  try {
-    const token = localStorage.getItem("token")
-    const res = await axios.get("/api/users", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    users.value = res.data
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to load user list.")
+export default {
+  data() {
+    return {
+      users: []
+    };
+  },
+  methods: {
+    async fetchUsers() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://127.0.0.1:5000/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.users = res.data;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to load user list.");
+      }
+    },
+    logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      this.$router.push("/login");
+    }
+  },
+  mounted() {
+    this.fetchUsers();
   }
-}
-
-// ✅ Logout handler
-function logout() {
-  localStorage.removeItem("token")
-  localStorage.removeItem("role")
-  router.push("/login")
-}
-
-onMounted(fetchUsers)
+};
 </script>
 
 <style scoped>

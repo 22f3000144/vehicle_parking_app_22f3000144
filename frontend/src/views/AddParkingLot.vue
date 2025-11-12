@@ -34,30 +34,34 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import axios from "axios"
-import { ref } from "vue"
-import { useRouter } from "vue-router"
 
-const router = useRouter()
-const lot = ref({
-  prime_location_name: "",
-  price: "",
-  address: "",
-  pin_code: "",
-  max_spot: ""
-})
-
-async function createLot() {
-  try {
-    const token = localStorage.getItem("token")
-    await axios.post("/api/lots", lot.value, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    alert("Parking lot created successfully.")
-    router.push("/admin")
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to create parking lot.")
+export default {
+  data() {
+    return {
+      lot: {
+        prime_location_name: "",
+        price: "",
+        address: "",
+        pin_code: "",
+        max_spot: ""
+      }
+    }
+  },
+  methods: {
+    async createLot() {
+      try {
+        const token = localStorage.getItem("token")
+        await axios.post("http://127.0.0.1:5000/api/lots", this.lot, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        alert("Parking lot created successfully.")
+        this.$router.push("/admin")
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to create parking lot.")
+      }
+    }
   }
 }
 </script>

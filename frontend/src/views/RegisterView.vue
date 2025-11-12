@@ -2,28 +2,24 @@
   <div class="container mt-5" style="max-width: 500px;">
     <h3 class="text-center mb-3">Register</h3>
     <div class="card p-4 shadow-sm">
-      <form @submit.prevent="registerUser">
+      <form @submit.prevent="register">
         <div class="mb-3">
-          <label>Username</label>
-          <input v-model="username" class="form-control" type="text" required />
+          <input v-model="data.username" type="text" placeholder="username" class="form-control" required />
         </div>
 
         <div class="mb-3">
-          <label>Email</label>
-          <input v-model="email" class="form-control" type="email" required />
+          <input v-model="data.email" type="email" placeholder="email" class="form-control" required />
         </div>
 
         <div class="mb-3">
-          <label>Vehicle Model</label>
-          <input v-model="model" class="form-control" type="text" placeholder="Optional" />
+          <input v-model="data.model" type="text" placeholder="vehicle model" class="form-control" />
         </div>
 
         <div class="mb-3">
-          <label>Password</label>
-          <input v-model="password" class="form-control" type="password" required />
+          <input v-model="data.password" type="password" placeholder="password" class="form-control" required />
         </div>
 
-        <button class="btn btn-primary w-100" type="submit">Register</button>
+        <button @click="register" type="submit" class="btn btn-primary w-100">Register</button>
       </form>
 
       <div class="text-center mt-3">
@@ -33,29 +29,30 @@
   </div>
 </template>
 
-<script setup>
-import axios from "axios"
-import { useRouter } from "vue-router"
-import { ref } from "vue"
+<script>
+import axios from "axios";
 
-const router = useRouter()
-const username = ref("")
-const email = ref("")
-const model = ref("")
-const password = ref("")
-
-async function registerUser() {
-  try {
-    const res = await axios.post("/api/register", {
-      username: username.value,
-      email: email.value,
-      model: model.value,
-      password: password.value
-    })
-    alert(res.data.message || "Registration successful!")
-    router.push("/login")
-  } catch (err) {
-    alert(err.response?.data?.message || "Registration failed")
+export default {
+  data() {
+    return {
+      data: {
+        username: "",
+        email: "",
+        model: "",
+        password: ""
+      }
+    };
+  },
+  methods: {
+    async register() {
+      try {
+        const response = await axios.post("http://127.0.0.1:5000/register", this.data);
+        alert(response.data.message || "Registration successful!");
+        this.$router.push("/login");
+      } catch (err) {
+        alert(err.response?.data?.message || "Registration failed");
+      }
+    }
   }
-}
+};
 </script>

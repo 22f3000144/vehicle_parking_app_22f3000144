@@ -53,30 +53,19 @@
             <td>{{ lot.pin_code }}</td>
             <td>{{ lot.max_spot }}</td>
             <td>
-              <router-link
-                :to="`/lot-detail/${lot.id}`"
-                class="btn btn-sm btn-secondary me-1"
-              >
+              <router-link :to="`/lot-detail/${lot.id}`" class="btn btn-sm btn-secondary me-1">
                 Detail
               </router-link>
-              <router-link
-                :to="`/edit-lot/${lot.id}`"
-                class="btn btn-sm btn-warning me-1"
-              >
+              <router-link :to="`/edit-lot/${lot.id}`" class="btn btn-sm btn-warning me-1">
                 Edit
               </router-link>
-              <button
-                @click="deleteLot(lot.id)"
-                class="btn btn-sm btn-danger"
-              >
+              <button @click="deleteLot(lot.id)" class="btn btn-sm btn-danger">
                 Delete
               </button>
             </td>
           </tr>
           <tr v-if="!parkingLots.length">
-            <td colspan="7" class="text-center text-muted">
-              No parking lots available.
-            </td>
+            <td colspan="7" class="text-center text-muted">No parking lots available.</td>
           </tr>
         </tbody>
       </table>
@@ -84,57 +73,57 @@
   </div>
 </template>
 
-<script setup>
-import axios from "axios"
-import { ref, onMounted } from "vue"
-import { useRouter } from "vue-router"
+<script>
+import axios from "axios";
 
-const router = useRouter()
-const parkingLots = ref([])
-const loading = ref(true)
+export default {
+  data() {
+    return {
+      parkingLots: [],
+      loading: true
+    };
+  },
+  methods: {
+    async fetchParkingLots() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://127.0.0.1:5000/lots", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.parkingLots = res.data;
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to load parking lots");
+      } finally {
+        this.loading = false;
+      }
+    },
+    async deleteLot(lotId) {
+      if (!confirm("Are you sure you want to delete this lot?")) return;
 
-// ✅ Fetch parking lots from backend
-async function fetchParkingLots() {
-  try {
-    const token = localStorage.getItem("token")
-    const res = await axios.get("http://127.0.0.1:5000/api/lots", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    parkingLots.value = res.data
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to load parking lots")
-  } finally {
-    loading.value = false
-  }
-}
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.delete(`http://127.0.0.1:5000/lots/${lotId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-// ✅ Delete lot
-async function deleteLot(lotId) {
-  if (!confirm("Are you sure you want to delete this lot?")) return
-
-  try {
-    const token = localStorage.getItem("token")
-    const res = await axios.delete(`http://127.0.0.1:5000/api/lots/${lotId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    if (res.status === 200) {
-      parkingLots.value = parkingLots.value.filter((lot) => lot.id !== lotId)
-      alert("Parking lot deleted successfully.")
+        if (res.status === 200) {
+          this.parkingLots = this.parkingLots.filter((lot) => lot.id !== lotId);
+          alert("Parking lot deleted successfully.");
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to delete lot. Ensure lot is empty.");
+      }
+    },
+    logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      this.$router.push("/login");
     }
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to delete lot. Ensure lot is empty.")
+  },
+  mounted() {
+    this.fetchParkingLots();
   }
-}
-
-// ✅ Logout handler
-function logout() {
-  localStorage.removeItem("token")
-  localStorage.removeItem("role")
-  router.push("/login")
-}
-
-onMounted(fetchParkingLots)
+};
 </script>
 
 <style scoped>
