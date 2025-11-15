@@ -1,6 +1,29 @@
+
 <script setup>
+import { useRoute } from 'vue-router'
+import Navbar from '../src/components/NavBar.vue'
+
+const route = useRoute()
+</script>
+
+<template>
+  <!-- Show navbar only when NOT on login/register -->
+  <Navbar v-if="route.name !== 'login' && route.name !== 'register'" />
+
+  <router-view />
+</template>
+
+<style scoped>
+/* All old header styles removed */
+</style>
+
+
+
+
+
+<!-- <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+
 </script>
 
 <template>
@@ -84,4 +107,4 @@ nav a:first-of-type {
     margin-top: 1rem;
   }
 }
-</style>
+</style> -->

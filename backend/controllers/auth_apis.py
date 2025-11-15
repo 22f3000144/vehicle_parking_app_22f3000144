@@ -32,17 +32,20 @@ class RegisterAPI(Resource):
         if datastore.find_user(email=email):
             return {"message": "User already registered."}, 409
 
+        # Ensure 'user' role exists
         role = datastore.find_role("user")
         if not role:
             role = datastore.create_role(name="user", description="Regular User")
             db.session.commit()
 
+        # Create user (must set active=True for Flask-Security)
         user = datastore.create_user(
             username=username,
             email=email,
             model=model,
-            password=utils.hash_password(password),
-            roles=[role]
+            password=password,
+            roles=[role],
+            active=True,
         )
         db.session.commit()
 
@@ -57,6 +60,7 @@ class LoginAPI(Resource):
 
         email = data.get("email")
         password = data.get("password")
+
         datastore = get_datastore()
         user = datastore.find_user(email=email)
 
@@ -80,6 +84,7 @@ class ProfileAPI(Resource):
     def get(self):
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
+
         if not user:
             return {"message": "User not found"}, 404
 

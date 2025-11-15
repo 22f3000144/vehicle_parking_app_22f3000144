@@ -3,6 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-primary">Welcome, {{ username }}!</h3>
       <button @click="logout" class="btn btn-outline-danger btn-sm">Logout</button>
+      <router-link to="/Reserve" class="btn btn-primary btn-sm">Book Parking</router-link>
     </div>
 
     <p class="text-muted">Manage your parking activity below.</p>

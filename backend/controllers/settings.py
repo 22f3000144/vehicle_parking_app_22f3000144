@@ -7,16 +7,32 @@ class Config:
     SQLITE_DB_DIR = None
     SQLALCHEMY_DATABASE_URI = None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    
     # Redis and Celery Config
     CELERY_BROKER_URL = "redis://localhost:6379/1"
     CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
     CELERY_TIMEZONE = "Asia/Kolkata"
+    
+    # Mail settings
+    MAIL_SERVER = "smtp.gmail.com"
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv("MAIL_USER")
+    MAIL_PASSWORD = os.getenv("MAIL_PASS")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_USER")
 
-    # Caching Config
+    # Redis Cache
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = "localhost"
     CACHE_REDIS_PORT = 6379
+    CACHE_REDIS_DB = 1
+    CACHE_REDIS_URL = "redis://localhost:6379/1"
+    CACHE_DEFAULT_TIMEOUT = 60
+
+
+
+
+
 
 class LocalDevelopmentConfig(Config):
     SQLITE_DB_DIR = os.path.join(basedir, 'data')
@@ -39,3 +55,24 @@ class LocalDevelopmentConfig(Config):
     SECURITY_RECOVERABLE = True
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False  # Keep False for local HTTP
+
+
+# Mail settings
+MAIL_SERVER = "smtp.gmail.com"
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USERNAME = os.getenv("MAIL_USER")
+MAIL_PASSWORD = os.getenv("MAIL_PASS")
+MAIL_DEFAULT_SENDER = os.getenv("MAIL_USER")
+
+# Redis Cache
+CACHE_TYPE = "RedisCache"
+CACHE_REDIS_HOST = "localhost"
+CACHE_REDIS_PORT = 6379
+CACHE_REDIS_DB = 1
+CACHE_REDIS_URL = "redis://localhost:6379/1"
+CACHE_DEFAULT_TIMEOUT = 60
+
+# Celery
+broker_url = "redis://localhost:6379/0"
+result_backend = "redis://localhost:6379/0"

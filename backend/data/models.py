@@ -6,9 +6,9 @@ import uuid
 
 db = SQLAlchemy()
 
-# -----------------------------
+
 # USER & ROLE MODELS
-# -----------------------------
+
 class Role(db.Model, RoleMixin):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -38,12 +38,10 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(200), unique=True, nullable=False)
     model = db.Column(db.String(100))  # Car model
     password = db.Column(db.String(255), nullable=False)
-
-    # Optional unique tokens for identification
-    unique_id = db.Column(db.String(250), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    token_id = db.Column(db.String(250), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-
     # 👇 Required by Flask-Security 4.x
+        # Required by Flask-Security
+    active = db.Column(db.Boolean, default=True)
+
     fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
 
     # Relationships
@@ -54,9 +52,9 @@ class User(db.Model, UserMixin):
         return f"<User {self.username}>"
 
 
-# -----------------------------
+
 # PARKING MODELS
-# -----------------------------
+
 class ParkingLot(db.Model):
     __tablename__ = 'parking_lots'
 

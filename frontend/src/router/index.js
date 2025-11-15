@@ -7,14 +7,14 @@ import RegisterView from '../views/RegisterView.vue'
 import LoginView from '../views/LoginView.vue'
 
 // User Components
-import UserDashboard from '../views/User/UserDashboard.vue'
-import ReserveParking from '../views/User/ReserveParking.vue'
+import UserDashboard from '../views/UserDashboard.vue'
+import ReserveParking from '../views/ReserveParking.vue'
 
 // admin components
-import AdminDashboard from '../views/Admin/AdminDashboard.vue'
-import UserDetail from '../views/Admin/UserDetail.vue'
-import AddParkingLot from '../views/Admin/AddParkingLot.vue'
-import EditParkingLot from '../views/Admin/EditParkingLot.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
+import UserDetail from '../views/UserDetail.vue'
+import AddParkingLot from '../views/AddParkingLot.vue'
+import EditParkingLot from '../views/EditParkingLot.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },

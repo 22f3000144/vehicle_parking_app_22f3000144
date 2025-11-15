@@ -1,25 +1,28 @@
 <template>
   <div class="container mt-5" style="max-width: 500px;">
     <h3 class="text-center mb-3">Register</h3>
+
     <div class="card p-4 shadow-sm">
       <form @submit.prevent="register">
         <div class="mb-3">
-          <input v-model="data.username" type="text" placeholder="username" class="form-control" required />
+          <input v-model="form.username" type="text" placeholder="Username" class="form-control" required />
         </div>
 
         <div class="mb-3">
-          <input v-model="data.email" type="email" placeholder="email" class="form-control" required />
+          <input v-model="form.email" type="email" placeholder="Email" class="form-control" required />
         </div>
 
         <div class="mb-3">
-          <input v-model="data.model" type="text" placeholder="vehicle model" class="form-control" />
+          <input v-model="form.model" type="text" placeholder="Vehicle Model" class="form-control" />
         </div>
 
         <div class="mb-3">
-          <input v-model="data.password" type="password" placeholder="password" class="form-control" required />
+          <input v-model="form.password" type="password" placeholder="Password" class="form-control" required />
         </div>
 
-        <button @click="register" type="submit" class="btn btn-primary w-100">Register</button>
+        <button type="submit" class="btn btn-primary w-100">
+          Register
+        </button>
       </form>
 
       <div class="text-center mt-3">
@@ -35,7 +38,7 @@ import axios from "axios";
 export default {
   data() {
     return {
-      data: {
+      form: {
         username: "",
         email: "",
         model: "",
@@ -43,10 +46,11 @@ export default {
       }
     };
   },
+
   methods: {
     async register() {
       try {
-        const response = await axios.post("http://127.0.0.1:5000/register", this.data);
+        const response = await axios.post("http://127.0.0.1:5000/api/register", this.form);
         alert(response.data.message || "Registration successful!");
         this.$router.push("/login");
       } catch (err) {
