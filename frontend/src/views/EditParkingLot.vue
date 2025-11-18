@@ -29,6 +29,7 @@
         </div>
 
         <button class="btn btn-warning w-100" type="submit">Update</button>
+         <RouterLink to="/adminhome" class="nav-link text-white" style="cursor:pointer;">Go Back</RouterLink>
       </form>
     </div>
   </div>
@@ -54,7 +55,7 @@ export default {
       try {
         const token = localStorage.getItem("token");
         const id = this.$route.params.id;
-        const res = await axios.get(`http://127.0.0.1:5000/lots/${id}`, {
+        const res = await axios.get(`http://127.0.0.1:5000/api/lots/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.lot = res.data;

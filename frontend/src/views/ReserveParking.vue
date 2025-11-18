@@ -2,9 +2,9 @@
   <div class="p-4" style="background-color: white; color: black; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <!-- Navigation Bar -->
     <nav class="d-flex gap-3 mb-4" style="background-color: teal; padding: 10px 20px; border-radius: 5px;">
-      <RouterLink to="/user" class="text-white fw-bold text-decoration-none">🏠 Home</RouterLink>
-      <RouterLink to="/user-summary" class="text-white fw-bold text-decoration-none">Summary</RouterLink>
-      <RouterLink to="/logout" class="text-white fw-bold text-decoration-none">Log-out</RouterLink>
+      <RouterLink to="/userhome" class="text-white fw-bold text-decoration-none">🏠 Home</RouterLink>
+      <RouterLink to="/userchart" class="text-white fw-bold text-decoration-none">Summary</RouterLink>
+     
     </nav>
 
     <!-- Main Container -->

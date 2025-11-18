@@ -16,27 +16,30 @@
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
           <!-- Public Links -->
-          <li class="nav-item" v-if="!isLoggedIn">
+          <!-- <li class="nav-item" v-if="!isLoggedIn">
             <router-link class="nav-link" :to="{ name: 'home' }">Home</router-link>
-          </li>
+          </li> -->
           <li class="nav-item" v-if="!isLoggedIn">
-            <router-link class="nav-link" :to="{ name: 'login' }">Login</router-link>
+            <router-link class="nav-link" :to="{ name: 'user_login' }">Login</router-link><br> as User
           </li>
           <li class="nav-item" v-if="!isLoggedIn">
             <router-link class="nav-link" :to="{ name: 'register' }">Register</router-link>
           </li>
+          <li class="nav-item" v-if="!isLoggedIn">
+            <router-link class="nav-link" :to="{ name: 'admin_login' }">Login</router-link><br> as Admin
+          </li>
 
           <!-- User Links -->
           <li class="nav-item" v-if="isLoggedIn && role === 'user'">
-            <router-link class="nav-link" :to="{ name: 'user_dashboard' }">Dashboard</router-link>
+            <router-link class="nav-link" :to="{ name: 'user_home' }">Dashboard</router-link>
           </li>
           <li class="nav-item" v-if="isLoggedIn && role === 'user'">
-            <router-link class="nav-link" :to="{ name: 'Reserve' }">Reserve Parking</router-link>
+            <router-link class="nav-link" :to="{ name: 'reserve' }">Reserve Parking</router-link>
           </li>
 
           <!-- Admin Links -->
           <li class="nav-item" v-if="isLoggedIn && role === 'admin'">
-            <router-link class="nav-link" :to="{ name: 'admin_dashboard' }">Admin Panel</router-link>
+            <router-link class="nav-link" :to="{ name: 'admin_home' }">Admin Panel</router-link>
           </li>
 
           <li class="nav-item" v-if="isLoggedIn && role === 'admin'">
@@ -44,7 +47,7 @@
           </li>
 
           <li class="nav-item" v-if="isLoggedIn && role === 'admin'">
-            <router-link class="nav-link" :to="{ name: 'AddParking' }">Add Lot</router-link>
+            <router-link class="nav-link" :to="{ name: 'add_parking' }">Add Lot</router-link>
           </li>
 
           <!-- Logout -->

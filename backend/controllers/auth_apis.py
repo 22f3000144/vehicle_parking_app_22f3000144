@@ -4,9 +4,7 @@ from flask import request, jsonify, make_response, current_app
 from flask_security import utils
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from data.models import db, User, Role
-
-def get_datastore():
-    return current_app.security.datastore
+from controllers.User_Datastore import user_datastore
 
 
 class Index(Resource):
@@ -28,7 +26,7 @@ class RegisterAPI(Resource):
         if not username or not email or not password:
             return {"message": "All fields are required."}, 400
 
-        datastore = get_datastore()
+        datastore = user_datastore
         if datastore.find_user(email=email):
             return {"message": "User already registered."}, 409
 
@@ -61,11 +59,11 @@ class LoginAPI(Resource):
         email = data.get("email")
         password = data.get("password")
 
-        datastore = get_datastore()
+        datastore = user_datastore
         user = datastore.find_user(email=email)
 
         if not user or not utils.verify_password(password, user.password):
-            return {"message": "Invalid credentials."}, 401
+            return {"message": "Invalid credentials. (backend)"}, 401
 
         token = create_access_token(identity=user.id)
         role = user.roles[0].name if user.roles else "user"

@@ -10,13 +10,13 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <RouterLink to="/admin" class="nav-link text-white" style="cursor:pointer;">Home</RouterLink>
+              <RouterLink to="/adminhome" class="nav-link text-white" style="cursor:pointer;">Home</RouterLink>
             </li>
             <li class="nav-item">
-              <RouterLink to="/user-detail" class="nav-link text-white" style="cursor:pointer;">Users</RouterLink>
+              <RouterLink to="/userlist" class="nav-link text-white" style="cursor:pointer;">Users</RouterLink>
             </li>
             <li class="nav-item">
-              <RouterLink to="/logout" class="nav-link text-white" style="cursor:pointer;">Log-out</RouterLink>
+              
             </li>
           </ul>
         </div>
@@ -63,7 +63,7 @@ export default {
     async fetchChart() {
       try {
         const token = localStorage.getItem("token")
-        const res = await axios.get("http://localhost:5000/api/admin/summary-chart", {
+        const res = await axios.get("http://localhost:5000/api/admin/summary", {
           headers: { Authorization: `Bearer ${token}` },
         })
         this.chartUrl = res.data.chart_url1 // Keep backend variable naming intact

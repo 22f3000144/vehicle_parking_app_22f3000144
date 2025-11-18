@@ -3,7 +3,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="text-primary">Welcome, {{ username }}!</h3>
       <button @click="logout" class="btn btn-outline-danger btn-sm">Logout</button>
-      <router-link to="/Reserve" class="btn btn-primary btn-sm">Book Parking</router-link>
+      <router-link to="/reserve" class="btn btn-primary btn-sm">Book Parking</router-link>
+      <router-link to="/userchart" class="btn btn-primary btn-sm">Summary</router-link>
     </div>
 
     <p class="text-muted">Manage your parking activity below.</p>
@@ -81,7 +82,7 @@ export default {
       try {
         const token = localStorage.getItem("token")
         if (!token) {
-          this.$router.push("/login")
+          this.$router.push("/userlogin")
           return
         }
 
@@ -154,7 +155,7 @@ export default {
       localStorage.removeItem("token")
       localStorage.removeItem("role")
       localStorage.removeItem("username")
-      this.$router.push("/login")
+      this.$router.push("/")
     },
   },
 
@@ -163,7 +164,7 @@ export default {
       !localStorage.getItem("token") ||
       localStorage.getItem("role") !== "user"
     ) {
-      this.$router.push("/login")
+      this.$router.push("/userlogin")
     } else {
       this.fetchParkingLots()
     }

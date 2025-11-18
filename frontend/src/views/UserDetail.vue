@@ -5,8 +5,8 @@
       <div class="navbar-nav w-100 d-flex justify-content-between align-items-center">
         <div>
           <a class="navbar-brand fw-bold">Admin Panel</a>
-          <router-link to="/admin" class="nav-link d-inline text-white">Home</router-link>
-          <router-link to="/admin-summary" class="nav-link d-inline text-white">Summary</router-link>
+          <router-link to="/adminhome" class="nav-link d-inline text-white">Home</router-link>
+          <router-link to="/adminchart" class="nav-link d-inline text-white">Summary</router-link>
         </div>
         <button @click="logout" class="btn btn-outline-light btn-sm">Log-out</button>
       </div>
@@ -63,7 +63,7 @@ export default {
     async fetchUsers() {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://127.0.0.1:5000/users", {
+        const res = await axios.get("http://127.0.0.1:5000/api/users", {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.users = res.data;

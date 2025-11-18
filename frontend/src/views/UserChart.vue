@@ -14,10 +14,10 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg" style="background-color: rgba(0, 128, 128, 0.9); padding: 10px 20px;">
       <div class="container-fluid">
-        <RouterLink to="/user" class="navbar-brand fw-bold text-white">🏠 Home</RouterLink>
+        <RouterLink to="/userhome" class="navbar-brand fw-bold text-white">🏠 Home</RouterLink>
         <div class="navbar-nav">
-          <RouterLink to="/reservation" class="nav-link text-white">Book Parking</RouterLink>
-          <RouterLink to="/logout" class="nav-link text-white">Log-out</RouterLink>
+          <RouterLink to="/reserve" class="nav-link text-white">Book Parking</RouterLink>
+          
         </div>
       </div>
     </nav>
@@ -43,7 +43,7 @@
           </div>
 
           <div class="mt-4 text-center">
-            <!-- Optional extra actions -->
+            
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@ export default {
     async fetchChart() {
       try {
         const token = localStorage.getItem("token")
-        const res = await axios.get("http://localhost:5000/api/user/summary-chart", {
+        const res = await axios.get("http://localhost:5000/api/user/summary", {
           headers: { Authorization: `Bearer ${token}` },
         })
         this.chartUrl = res.data.chart_url2 // adjust key name to match your backend response

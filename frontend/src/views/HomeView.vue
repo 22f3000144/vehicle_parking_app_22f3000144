@@ -3,17 +3,19 @@
 </script>
 
 <template>
-  <nav>
-    <h1> Welcome to ParkSafe - The trust </h1>
-  </nav>
+   <img alt="Vue logo" class="logo" src="../assets/logo.png" width="150" height="150" />
+
+    <div>
+      <nav>
+        <RouterLink to="/register">Sine-In</RouterLink><br>
+        <!-- <RouterLink to="/about">About</RouterLink> -->
+        <RouterLink to="/userlogin">User-Login</RouterLink>
+        <RouterLink to="/adminlogin">Admin-Login</RouterLink>
+
+      </nav>
+    </div>
 </template>
 
 <style>
-@media (min-width: 1024px) {
-  .about {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
+
 </style>

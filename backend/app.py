@@ -1,9 +1,10 @@
 import os
 from flask import Flask
 from flask_restful import Api
-from flask_security import Security, SQLAlchemySessionUserDatastore
+from flask_security import Security, SQLAlchemyUserDatastore
 from data.models import *
 from controllers.settings import LocalDevelopmentConfig
+from controllers.User_Datastore import user_datastore
 from flask_jwt_extended import JWTManager
 from flask_caching import Cache
 from werkzeug.security import generate_password_hash
@@ -43,7 +44,7 @@ def init_celery(flask_app):
 # Admin Creation
 
 import uuid
-from werkzeug.security import generate_password_hash
+
 
 def create_admin_user(app, user_datastore):
     with app.app_context():
@@ -62,7 +63,7 @@ def create_admin_user(app, user_datastore):
                 username='admin',
                 email='admin@gmail.com',
                 model='System',
-                password=generate_password_hash("admin123"),
+                password="admin123",
                 fs_uniquifier=str(uuid.uuid4()),
                 active=True
             )
@@ -89,6 +90,7 @@ def create_app():
 
     # Init extensions
     db.init_app(app)
+    security = Security(app, user_datastore)
     api = Api(app)
     jwt = JWTManager(app)
     cache = Cache(app)
@@ -105,9 +107,6 @@ def create_app():
         }
     })
 
-    # Flask-Security
-    user_datastore = SQLAlchemySessionUserDatastore(db.session, User, Role)
-    app.security = Security(app, user_datastore)
 
     # Celery
     celery = init_celery(app)
