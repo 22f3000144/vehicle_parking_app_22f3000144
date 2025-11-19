@@ -77,19 +77,14 @@ class ParkingSpot(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     lot_id = db.Column(db.Integer, db.ForeignKey('parking_lots.id', ondelete='CASCADE'), nullable=False)
-
-    status = db.Column(Enum('A', 'O', name='spot_status'), default='A', nullable=False)  # A = Available, O = Occupied
-
-    # Track who is using it right now (optional direct relation)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    entry_time = db.Column(db.DateTime, nullable=True)
-    exit_time = db.Column(db.DateTime, nullable=True)
-
-    # One-to-Many: ParkingSpot → ReserveParking
-    reservations = db.relationship('ReserveParking', backref='spot', cascade="all, delete", passive_deletes=True)
-
+    spot_number = db.Column(db.Integer, nullable=False)   
+    status = db.Column(db.String(1), default='A', nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    entry_time = db.Column(db.DateTime)
+    exit_time = db.Column(db.DateTime)
     def __repr__(self):
         return f"<ParkingSpot id={self.id} lot_id={self.lot_id} status={self.status}>"
+
 
 
 class ReserveParking(db.Model):

@@ -10,9 +10,9 @@ from celery import shared_task
 from sqlalchemy import func
 
 
-# -----------------------------------------------------
+
 # Helper: send email
-# -----------------------------------------------------
+
 def send_mail(subject, recipients, html):
     mail = current_app.extensions.get("mail")
     if not mail:
@@ -23,9 +23,9 @@ def send_mail(subject, recipients, html):
     return True
 
 
-# -----------------------------------------------------
+
 # 1. Daily inactive user reminder
-# -----------------------------------------------------
+
 @shared_task(name="daily_inactive_user_reminder")
 def daily_inactive_user_reminder():
     """Send a reminder email to users who have no reservations for 3+ days"""
@@ -50,9 +50,9 @@ def daily_inactive_user_reminder():
     return f"Sent to {len(inactive_users)} inactive users."
 
 
-# -----------------------------------------------------
+
 # 2. Notify admin when new parking lot is created (daily scan)
-# -----------------------------------------------------
+
 @shared_task(name="daily_new_lot_alert")
 def daily_new_lot_alert():
     """Notify admin of any new parking lots created today"""
@@ -82,9 +82,9 @@ def daily_new_lot_alert():
     return f"Sent admin alert for {len(lots)} lots."
 
 
-# -----------------------------------------------------
+
 # 3. Monthly activity report
-# -----------------------------------------------------
+
 @shared_task(name="monthly_report")
 def monthly_report():
     """Send monthly activity report (1st of every month)"""
@@ -119,9 +119,9 @@ def monthly_report():
     return "Monthly reports sent."
 
 
-# -----------------------------------------------------
+
 # 4. Export User Reservation History to CSV
-# -----------------------------------------------------
+
 @shared_task(name="export_user_history")
 def export_user_history(user_id):
     """Generate CSV for the user’s reservation history"""

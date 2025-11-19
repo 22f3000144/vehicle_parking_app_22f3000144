@@ -124,7 +124,7 @@ export default {
         this.parkingLots = res.data;
 
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to load parking lots");
+        console.log("wtf.. try agingyoou can do it..");
       } finally {
         this.loading = false;
       }
@@ -146,7 +146,7 @@ export default {
         }
 
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to delete lot. Ensure lot is empty.");
+        console.log("wtf.. try agingyoou can do it..");
       }
     },
 

@@ -55,24 +55,13 @@ class LocalDevelopmentConfig(Config):
     SECURITY_RECOVERABLE = True
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False  # Keep False for local HTTP
+    JWT_SECRET_KEY = "errrtyshnab@%$#Y^rx4z567a8q2ik3edjhxgre34567"
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
 
+    # JWT config (required)
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
+    JWT_IDENTITY_CLAIM = "sub"   # very important
+    JWT_ERROR_MESSAGE_KEY = "message"
 
-# Mail settings
-MAIL_SERVER = "smtp.gmail.com"
-MAIL_PORT = 587
-MAIL_USE_TLS = True
-MAIL_USERNAME = os.getenv("MAIL_USER")
-MAIL_PASSWORD = os.getenv("MAIL_PASS")
-MAIL_DEFAULT_SENDER = os.getenv("MAIL_USER")
-
-# Redis Cache
-CACHE_TYPE = "RedisCache"
-CACHE_REDIS_HOST = "localhost"
-CACHE_REDIS_PORT = 6379
-CACHE_REDIS_DB = 1
-CACHE_REDIS_URL = "redis://localhost:6379/1"
-CACHE_DEFAULT_TIMEOUT = 60
-
-# Celery
-broker_url = "redis://localhost:6379/0"
-result_backend = "redis://localhost:6379/0"

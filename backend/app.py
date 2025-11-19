@@ -142,6 +142,7 @@ api.add_resource(LoginAPI, "/api/login")
 api.add_resource(RegisterAPI, "/api/register")
 api.add_resource(ProfileAPI, "/api/profile")
 
+
 # User CRUD
 api.add_resource(UserListAPI, '/api/users')
 api.add_resource(UserAPI, '/api/users/<int:user_id>')
@@ -150,30 +151,29 @@ api.add_resource(UserAPI, '/api/users/<int:user_id>')
 api.add_resource(RoleListAPI, '/api/roles')
 api.add_resource(RoleAPI, '/api/roles/<int:role_id>')
 
-# Parking Lot CRUD
-api.add_resource(ParkingLotListAPI, '/api/lots')
-api.add_resource(ParkingLotAPI, '/api/lots/<int:lot_id>')
+# Parking Lot CRUD (combined)
+api.add_resource(ParkingLotAPI, '/api/lots', '/api/lots/<int:lot_id>')
 
-# Parking Spot CRUD
-api.add_resource(ParkingSpotListAPI, '/api/spots')
-api.add_resource(ParkingSpotAPI, '/api/spots/<int:spot_id>')
+# Parking Spot CRUD (combined)
+api.add_resource(ParkingSpotAPI, '/api/spots', '/api/spots/<int:spot_id>')
 
-# Reservation actions
+# Reservation actions & history & detail
 api.add_resource(ReserveParkingAPI, '/api/reserve')
 api.add_resource(ReleaseParkingAPI, '/api/release')
 api.add_resource(ReserveHistoryAPI, '/api/reservations')
 api.add_resource(ReserveDetailAPI, '/api/reservations/<int:reservation_id>')
 
-# Admin dashboard analytics
+# Admin analytics
 api.add_resource(AdminSummaryChartAPI, '/api/admin/summary')
-api.add_resource(AdminParkingStatsAPI, '/admin/parkingstats')
+api.add_resource(AdminParkingStatsAPI, '/api/admin/parkingstats')
 
-# User dashboard analytics
+# User analytics
 api.add_resource(UserSummaryChartAPI, '/api/user/summary')
 api.add_resource(UserParkingStatusAPI, '/api/user/status')
 
-
-
+# Async CSV Export
+api.add_resource(ExportHistoryAPI, '/api/export/history')
+api.add_resource(ExportStatusAPI, '/api/export/status')
 
 # MAIN
 

@@ -24,7 +24,7 @@
               <th>Username</th>
               <th>Email</th>
               <th>Model</th>
-              <th>Role</th>
+             
             </tr>
           </thead>
           <tbody class="text-center">
@@ -33,11 +33,6 @@
               <td>{{ user.username }}</td>
               <td>{{ user.email }}</td>
               <td>{{ user.model || '-' }}</td>
-              <td>
-                <span :class="user.roles.includes('admin') ? 'badge bg-danger' : 'badge bg-secondary'">
-                  {{ user.roles.join(', ') }}
-                </span>
-              </td>
             </tr>
 
             <tr v-if="!users.length">
@@ -68,7 +63,7 @@ export default {
         });
         this.users = res.data;
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to load user list.");
+        console.log("wtf.. try agingyoou can do it..");
       }
     },
     logout() {

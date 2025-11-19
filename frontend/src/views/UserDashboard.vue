@@ -96,7 +96,7 @@ export default {
           reserved: false,
         }))
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to load parking lots.")
+        console.log("You can fix it")
       } finally {
         this.loading = false
       }

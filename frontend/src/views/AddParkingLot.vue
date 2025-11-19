@@ -4,12 +4,10 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-black px-3">
       <a class="navbar-brand text-orange fw-bold" href="#">Admin Portal</a>
-
       <div class="navbar-nav">
         <router-link class="nav-link text-white" to="/adminhome">Home</router-link>
         <router-link class="nav-link text-white" to="/userlist">Users</router-link>
         <router-link class="nav-link text-white" to="/adminchart">Summary</router-link>
-
       </div>
     </nav>
 
@@ -44,7 +42,10 @@
           <input v-model="form.max_spot" type="number" class="form-control" required />
         </div>
 
-        <button type="submit" class="btn btn-warning w-100">Create</button>
+        <button type="submit" class="btn btn-warning w-100" :disabled="loading">
+          <span v-if="loading">Creating...</span>
+          <span v-else>Create</span>
+        </button>
 
       </form>
     </div>
@@ -66,35 +67,52 @@ export default {
         address: "",
         pin_code: "",
         max_spot: ""
-      }
+      },
+      loading: false
     };
   },
 
   methods: {
-    async createLot() {
-      try {
-        const token = localStorage.getItem("token");
+      async createLot() {
+        try {
+          this.loading = true;
 
-        const response = await axios.post(
-          "http://127.0.0.1:5000/api/lots",
-          this.form,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer' + token 
-            }   
+          const prime_location_name = this.form.prime_location_name;
+          const address = this.form.address;
+          const pin_code = this.form.pin_code;
+          const price = parseFloat(this.form.price);
+          const max_spot = parseInt(this.form.max_spot);
+
+          const payload = { prime_location_name, price, address, pin_code, max_spot };
+          console.log("Sending payload:", payload);
+
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("No token found. Please login again.");
+            this.loading = false;
+            return;
           }
-        );
-        
-        alert(response.data.message || "Parking lot created!");
 
-        this.$router.push("/adminhome");
+          const response = await axios.post(
+            "http://127.0.0.1:5000/api/lots",
+            payload,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
 
-      } catch (err) {
-        console.log(err);
-        alert(err.response?.data?.message);
+          alert(response.data.message);
+          this.$router.push("/adminhome");
+
+        } catch (err) {
+          console.error(err);
+        } finally {
+          this.loading = false;
+        }
       }
-    }
   }
 };
 </script>
