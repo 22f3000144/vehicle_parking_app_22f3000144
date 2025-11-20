@@ -147,9 +147,6 @@ api.add_resource(ProfileAPI, "/api/profile")
 api.add_resource(UserListAPI, '/api/users')
 api.add_resource(UserAPI, '/api/users/<int:user_id>')
 
-# Role CRUD
-api.add_resource(RoleListAPI, '/api/roles')
-api.add_resource(RoleAPI, '/api/roles/<int:role_id>')
 
 # Parking Lot CRUD (combined)
 api.add_resource(ParkingLotAPI, '/api/lots', '/api/lots/<int:lot_id>')

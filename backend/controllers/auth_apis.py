@@ -65,7 +65,9 @@ class LoginAPI(Resource):
         if not user or not utils.verify_password(password, user.password):
             return {"message": "Invalid credentials. (backend)"}, 401
 
-        token = create_access_token(identity=user.id)
+    
+        token = create_access_token(identity=str(user.id))
+
         role = user.roles[0].name if user.roles else "user"
 
         return {

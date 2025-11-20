@@ -1,204 +1,215 @@
 <template>
-  <div class="container mt-4" id="user-dashboard">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h3 class="text-primary">Welcome, {{ username }}!</h3>
-      <button @click="logout" class="btn btn-outline-danger btn-sm">Logout</button>
-      <router-link to="/reserve" class="btn btn-primary btn-sm">Book Parking</router-link>
-      <router-link to="/userchart" class="btn btn-primary btn-sm">Summary</router-link>
-    </div>
+  <div class="container mt-4">
 
-    <p class="text-muted">Manage your parking activity below.</p>
-
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-white">User Portal</a>
+        <div class="navbar-nav ms-auto">
+          <RouterLink to="/userhome" class="nav-link text-white">🏠 Home</RouterLink>
+          <RouterLink to="/userchart" class="nav-link text-white">Summary</RouterLink>
+          <RouterLink to="/reserve" class="nav-link text-white">Book Parking</RouterLink>
+          <a @click="logout" class="nav-link text-white" style="cursor:pointer;">Log-out</a>
+        </div>
       </div>
+    </nav>
+
+    <!-- PAGE TITLE -->
+    <h1 class="text-center mb-4">Welcome to Your Dashboard</h1>
+
+    <!-- HISTORY TABLE -->
+    <h3 class="mb-3 text-dark">Your Parking History</h3>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle bg-white shadow-sm">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Reservation ID</th>
+            <th>Lot Location</th>
+            <th>Parked At</th>
+            <th>Left At</th>
+            <th>Cost (₹)</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody class="text-center">
+          <tr v-for="res in reservations" :key="res.id">
+
+            <td>{{ res.id }}</td>
+
+            <!-- LOT NAME -->
+            <td>{{ res.lot_name || 'Unknown' }}</td>
+
+            <!-- START TIME -->
+            <td>
+              {{ formatDate(res.parking_timestamp) || 'Not Started' }}
+            </td>
+
+            <!-- END TIME -->
+            <td>
+              {{ formatDate(res.leaving_timestamp) || 'In Progress' }}
+            </td>
+
+            <!-- COST -->
+            <td>
+              {{ res.parking_cost !== null ? res.parking_cost : '-' }}
+            </td>
+
+            <!-- ACTIONS -->
+            <td>
+              <button
+                v-if="!res.parking_timestamp"
+                class="btn btn-primary btn-sm"
+                @click="startParking(res.spot_id)"
+              >
+                🚗 In
+              </button>
+
+              <button
+                v-else-if="res.parking_timestamp && !res.leaving_timestamp"
+                class="btn btn-warning btn-sm"
+                @click="releaseParking(res.id)"
+              >
+                🏁 Release
+              </button>
+
+              <button
+                v-else
+                class="btn btn-secondary btn-sm"
+                disabled
+              >
+                ✅ Completed
+              </button>
+            </td>
+
+          </tr>
+
+          <tr v-if="reservations.length === 0">
+            <td colspan="6" class="text-muted">No reservations yet.</td>
+          </tr>
+
+        </tbody>
+
+      </table>
     </div>
 
-    <div v-else>
-      <div v-if="parkingLots.length" class="table-responsive">
-        <table class="table table-bordered table-striped shadow-sm bg-white">
-          <thead class="table-dark text-center">
-            <tr>
-              <th>ID</th>
-              <th>Location</th>
-              <th>Price/hr</th>
-              <th>Address</th>
-              <th>Pin Code</th>
-              <th>Available Spots</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody class="text-center">
-            <tr v-for="lot in parkingLots" :key="lot.id">
-              <td>{{ lot.id }}</td>
-              <td>{{ lot.prime_location_name }}</td>
-              <td>₹{{ lot.price }}</td>
-              <td>{{ lot.address }}</td>
-              <td>{{ lot.pin_code }}</td>
-              <td>{{ lot.available_spots }}</td>
-              <td>
-                <button
-                  v-if="!lot.reserved"
-                  class="btn btn-success btn-sm"
-                  @click="reserveSpot(lot.id)"
-                >
-                  Reserve
-                </button>
-                <button
-                  v-else
-                  class="btn btn-warning btn-sm"
-                  @click="releaseSpot(lot.id)"
-                >
-                  Release
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p v-else class="text-muted text-center">
-        No parking lots available at the moment.
-      </p>
-    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios"
-import { useRouter } from "vue-router"
 
 export default {
+  name: "UserHistory",
+
   data() {
     return {
-      username: localStorage.getItem("username") || "User",
-      parkingLots: [],
-      loading: true,
+      reservations: []
     }
-  },
-  methods: {
-    async fetchParkingLots() {
-      try {
-        const token = localStorage.getItem("token")
-        if (!token) {
-          this.$router.push("/userlogin")
-          return
-        }
-
-        const res = await axios.get("http://127.0.0.1:5000/api/lots", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        this.parkingLots = res.data.map((lot) => ({
-          ...lot,
-          available_spots: lot.max_spot,
-          reserved: false,
-        }))
-      } catch (err) {
-        console.log("You can fix it")
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async reserveSpot(lotId) {
-      try {
-        const token = localStorage.getItem("token")
-        const res = await axios.post(
-          "http://127.0.0.1:5000/api/reserve",
-          { lot_id: lotId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-
-        if (res.status === 200) {
-          const lot = this.parkingLots.find((l) => l.id === lotId)
-          if (lot) {
-            lot.reserved = true
-            lot.available_spots = Math.max(0, lot.available_spots - 1)
-          }
-          alert(`✅ Spot reserved successfully in lot #${lotId}`)
-        }
-      } catch (err) {
-        alert(err.response?.data?.message || "Failed to reserve spot.")
-      }
-    },
-
-    async releaseSpot() {
-      try {
-        const token = localStorage.getItem("token")
-        const res = await axios.post(
-          "http://127.0.0.1:5000/api/release",
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-
-        if (res.status === 200) {
-          this.parkingLots.forEach((lot) => {
-            if (lot.reserved) {
-              lot.reserved = false
-              lot.available_spots += 1
-            }
-          })
-
-          const { duration_minutes, cost } = res.data
-          alert(
-            `🅿️ Spot released.\nDuration: ${duration_minutes} mins\nCost: ₹${cost}`
-          )
-        }
-      } catch (err) {
-        alert(err.response?.data?.message || "Failed to release spot.")
-      }
-    },
-
-    logout() {
-      localStorage.removeItem("token")
-      localStorage.removeItem("role")
-      localStorage.removeItem("username")
-      this.$router.push("/")
-    },
   },
 
   mounted() {
-    if (
-      !localStorage.getItem("token") ||
-      localStorage.getItem("role") !== "user"
-    ) {
-      this.$router.push("/userlogin")
-    } else {
-      this.fetchParkingLots()
-    }
+    this.fetchHistory()
   },
+
+  methods: {
+    async fetchHistory() {
+      try {
+        const token = localStorage.getItem("token")
+
+        const res = await axios.get("http://127.0.0.1:5000/api/reservations", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        // Attach lot name for each reservation
+        // (Need an extra fetch for spot → lot)
+        await this.attachLotNames(res.data)
+      } catch (err) {
+        console.error("Error loading history")
+      }
+    },
+
+    async attachLotNames(history) {
+      const token = localStorage.getItem("token")
+
+      for (let r of history) {
+        if (!r.spot_id) continue
+
+        const spot = await axios.get(`http://127.0.0.1:5000/api/spots/${r.spot_id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        const lot = await axios.get(`http://127.0.0.1:5000/api/lots/${spot.data.lot_id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        r.lot_name = lot.data.prime_location_name
+      }
+
+      this.reservations = history
+    },
+
+    // Start parking
+    async startParking(spotId) {
+      try {
+        const token = localStorage.getItem("token")
+
+        await axios.post(
+          "http://127.0.0.1:5000/api/reserve",
+          { spot_id: spotId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+
+        this.fetchHistory()
+      } catch (err) {
+        alert(err.response?.data?.message || "Error starting parking")
+      }
+    },
+
+    // Release parking
+    async releaseParking(reservationId) {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await axios.post(
+          "http://127.0.0.1:5000/api/release",
+          { reservation_id: reservationId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        alert(`
+          🏁 Parking Released!
+          Duration: ${res.data.duration_minutes} minutes
+          Cost: ₹${res.data.cost}
+        `);
+
+        this.fetchHistory();
+
+      } catch (err) {
+        alert(err.response?.data?.message || "Error releasing parking");
+      }
+    },
+
+    formatDate(value) {
+      if (!value) return null
+      return new Date(value).toLocaleString()
+    },
+
+    logout() {
+      localStorage.clear()
+      this.$router.push("/")
+    }
+  }
 }
 </script>
 
 <style scoped>
-#user-dashboard {
-  min-height: 100vh;
-}
-
 .table {
   font-size: 0.9rem;
 }
-
-.text-center {
-  text-align: center;
-}
-
 @media (max-width: 768px) {
-  #user-dashboard {
-    padding: 1rem;
-  }
-
   .table {
-    font-size: 0.85rem;
-  }
-
-  h3 {
-    font-size: 1.2rem;
-  }
-
-  .btn {
     font-size: 0.8rem;
   }
 }

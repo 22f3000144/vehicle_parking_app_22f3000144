@@ -1,10 +1,10 @@
 <template>
   <div class="p-4" style="background-color: white; color: black; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    
     <!-- Navigation Bar -->
     <nav class="d-flex gap-3 mb-4" style="background-color: teal; padding: 10px 20px; border-radius: 5px;">
       <RouterLink to="/userhome" class="text-white fw-bold text-decoration-none">🏠 Home</RouterLink>
       <RouterLink to="/userchart" class="text-white fw-bold text-decoration-none">Summary</RouterLink>
-     
     </nav>
 
     <!-- Main Container -->
@@ -24,7 +24,7 @@
           >
             <option disabled value="">-- Choose a Lot --</option>
             <option v-for="lot in lots" :key="lot.id" :value="lot.id">
-              {{ lot.prime_location_name }} — ₹{{ lot.price }}/min ({{ lot.address }})
+              {{ lot.prime_location_name }} — ₹{{ lot.price }}/hr ({{ lot.address }})
             </option>
           </select>
         </div>
@@ -37,6 +37,7 @@
       <div v-if="successMessage" class="alert alert-success mt-4">
         {{ successMessage }}
       </div>
+
       <div v-if="errorMessage" class="alert alert-danger mt-4">
         {{ errorMessage }}
       </div>
@@ -46,10 +47,10 @@
 
 <script>
 import axios from "axios"
-import { useRouter } from "vue-router"
 
 export default {
   name: "ReserveSpot",
+
   data() {
     return {
       lots: [],
@@ -58,10 +59,30 @@ export default {
       errorMessage: "",
     }
   },
+
   mounted() {
+    this.checkActiveReservation()
     this.fetchLots()
   },
+
   methods: {
+    // Prevent booking if user already has a reservation
+    async checkActiveReservation() {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await axios.get("http://localhost:5000/api/user/status", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (res.data.active) {
+          this.errorMessage = `You already have a reserved spot (#${res.data.spot_number}) at ${res.data.lot_name}.`
+        }
+      } catch (err) {
+        // ignore minor errors
+      }
+    },
+
+    // Load all parking lots
     async fetchLots() {
       try {
         const token = localStorage.getItem("token")
@@ -70,37 +91,55 @@ export default {
         })
         this.lots = res.data
       } catch (err) {
-        this.errorMessage =
-          err.response?.data?.message || "Failed to load parking lots."
+        this.errorMessage = "Failed to load parking lots."
       }
     },
 
+    // Reserve a spot correctly using spot_id
     async reserveSpot() {
+      this.successMessage = ""
+      this.errorMessage = ""
+
       if (!this.selectedLot) {
         this.errorMessage = "Please select a parking lot."
         return
       }
 
+      // Get the selected lot object
+      const lot = this.lots.find(l => l.id === this.selectedLot)
+
+      if (!lot || !lot.spots) {
+        this.errorMessage = "Invalid lot selected."
+        return
+      }
+
+      // Pick the first free spot
+      const freeSpot = lot.spots.find(s => s.status === "A")
+
+      if (!freeSpot) {
+        this.errorMessage = "No available spots in this lot."
+        return
+      }
+
+      // Make reservation
       try {
         const token = localStorage.getItem("token")
+
         const res = await axios.post(
           "http://localhost:5000/api/reserve",
-          { lot_id: this.selectedLot },
+          { spot_id: freeSpot.id },
           { headers: { Authorization: `Bearer ${token}` } }
         )
 
-        this.successMessage = `✅ Reserved spot #${res.data.spot_number} at ${res.data.lot_name}.
-        Entry time: ${res.data.entry_time}`
-        this.errorMessage = ""
+        this.successMessage = `🅿️ Your spot is reserved!
+Spot #: ${freeSpot.spot_number}
+Parking Lot: ${lot.prime_location_name}
+Entry Time: ${new Date().toLocaleString()}`
+
       } catch (err) {
         this.errorMessage = err.response?.data?.message || "Reservation failed."
-        this.successMessage = ""
       }
     },
-  },
-  setup() {
-    const router = useRouter()
-    return { router }
   },
 }
 </script>

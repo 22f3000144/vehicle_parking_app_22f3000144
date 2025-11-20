@@ -44,6 +44,7 @@ export default {
 
         localStorage.setItem("token", response.data.access_token);
         localStorage.setItem("role", response.data.role);
+        localStorage.setItem("user_id", response.data.id);
 
         this.$router.push({ name: "userhome" });
 

@@ -37,14 +37,22 @@ class Config:
 class LocalDevelopmentConfig(Config):
     SQLITE_DB_DIR = os.path.join(basedir, 'data')
     SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(SQLITE_DB_DIR, "parking.db")
+    
+    DEBUG = True
     SECRET_KEY = "errrtyshnab@%$#Y^rx4z567a8q2ik3edjhxgre34567"
 
+    # JWT
+    JWT_SECRET_KEY = SECRET_KEY
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
+    JWT_IDENTITY_CLAIM = "sub"
+    JWT_ERROR_MESSAGE_KEY = "message"
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
+
+    # Flask-Security
     SECURITY_PASSWORD_HASH = "bcrypt"
     SECURITY_PASSWORD_SALT = "#@ewe65reds56"
-
-    # Flask-Security Config
-    DEBUG = True
     SECURITY_REGISTERABLE = True
     SECURITY_CONFIRMABLE = False
     SECURITY_SEND_REGISTER_EMAIL = False
@@ -53,15 +61,7 @@ class LocalDevelopmentConfig(Config):
     SECURITY_UNAUTHORIZED_VIEW = None
     SECURITY_TRACKABLE = True
     SECURITY_RECOVERABLE = True
-    WTF_CSRF_ENABLED = False
-    SESSION_COOKIE_SECURE = False  # Keep False for local HTTP
-    JWT_SECRET_KEY = "errrtyshnab@%$#Y^rx4z567a8q2ik3edjhxgre34567"
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
 
-    # JWT config (required)
-    JWT_TOKEN_LOCATION = ["headers"]
-    JWT_HEADER_NAME = "Authorization"
-    JWT_HEADER_TYPE = "Bearer"
-    JWT_IDENTITY_CLAIM = "sub"   # very important
-    JWT_ERROR_MESSAGE_KEY = "message"
+    WTF_CSRF_ENABLED = False
+    SESSION_COOKIE_SECURE = False
 

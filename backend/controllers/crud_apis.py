@@ -331,7 +331,7 @@ class ReserveParkingAPI(Resource):
         user_id = get_jwt_identity()
         data = request.get_json()
         if not data or "spot_id" not in data:
-            return make_response(jsonify({"message": "spot_id is required"}), 400)
+            return make_response(jsonify({"message": "spot_id is required [from backend 1]"}), 400)
 
         spot = ParkingSpot.query.get(data["spot_id"])
         if not spot:
@@ -360,6 +360,7 @@ class ReleaseParkingAPI(Resource):
     def post(self):
         user_id = get_jwt_identity()
         data = request.get_json()
+
         if not data or "spot_id" not in data:
             return make_response(jsonify({"message": "spot_id is required"}), 400)
 
@@ -371,22 +372,38 @@ class ReleaseParkingAPI(Resource):
             return make_response(jsonify({"message": "You do not own this reservation"}), 403)
 
         try:
+            lot = ParkingLot.query.get(spot.lot_id)
+
+            reservation = ReserveParking.query.filter_by(
+                spot_id=spot.id,
+                user_id=user_id,
+                leaving_timestamp=None
+            ).first()
+
+            if reservation:
+                reservation.leaving_timestamp = datetime.utcnow()
+
+                seconds = (reservation.leaving_timestamp - reservation.parking_timestamp).total_seconds()
+                duration_minutes = int(seconds // 60)
+
+                hours = max(1, int(seconds // 3600))
+                cost = hours * lot.price
+                reservation.parking_cost = cost
+
             spot.status = 'A'
             spot.user_id = None
             spot.exit_time = datetime.utcnow()
 
-            reservation = ReserveParking.query.filter_by(spot_id=spot.id, user_id=user_id, leaving_timestamp=None).first()
-            if reservation:
-                reservation.leaving_timestamp = datetime.utcnow()
-                # Calculate parking cost if needed (example: simple duration * lot price)
-                lot = ParkingLot.query.get(spot.lot_id)
-                if lot and reservation.parking_timestamp:
-                    seconds = (reservation.leaving_timestamp - reservation.parking_timestamp).total_seconds()
-                    hours = max(1, int(seconds // 3600))  # basic rounding up
-                    reservation.parking_cost = hours * lot.price
-
             db.session.commit()
-            return make_response(jsonify({"message": "Spot released"}), 200)
+
+            return make_response(jsonify({
+                "message": "Spot released",
+                "spot_number": spot.spot_number,
+                "lot_name": lot.prime_location_name,
+                "duration_minutes": duration_minutes,
+                "cost": cost
+            }), 200)
+
         except SQLAlchemyError as e:
             db.session.rollback()
             return make_response(jsonify({"message": str(e)}), 500)
