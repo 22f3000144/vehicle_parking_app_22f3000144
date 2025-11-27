@@ -17,13 +17,11 @@
             <li class="nav-item">
               <router-link to="/adminchart" class="nav-link text-white">Summary</router-link>
             </li>
-
           </ul>
         </div>
       </div>
     </nav>
 
-    <!-- Title -->
     <h2 class="mb-4">
       Parking Spots in {{ lot.prime_location_name }}
     </h2>
@@ -41,26 +39,21 @@
       <tbody>
         <tr v-for="spot in spots" :key="spot.id">
 
-          <!-- Spot ID -->
           <td>{{ spot.id }}</td>
 
-          <!-- Status -->
           <td>
             <span v-if="spot.status === 'O'" class="badge bg-danger">Occupied</span>
             <span v-else class="badge bg-success">Available</span>
           </td>
 
-          <!-- Vehicle Details -->
           <td>
             <div v-if="spot.status === 'O'">
-              <div v-if="spot.active_reservations.length > 0">
-                <div v-for="r in spot.active_reservations" :key="r.id">
-                  Vehicle: {{ r.user.model }}<br />
-                  User: {{ r.user.username }}<br />
-                </div>
+              <div v-if="spot.user">
+                Vehicle: {{ spot.user.model }}<br />
+                User: {{ spot.user.username }}
               </div>
               <div v-else>
-                <em>No vehicle details yet</em>
+                <em>Info...</em>
               </div>
             </div>
 
@@ -88,17 +81,38 @@ export default {
 
   async mounted() {
     const lot_id = this.$route.params.id;
+    const token = localStorage.getItem("token");
 
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/lots/${lot_id}`);
+      // Load lot
+      const res = await axios.get(
+        `http://127.0.0.1:5000/api/lots/${lot_id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      // API returns lot + spots
       this.lot = res.data;
-      this.spots = res.data.spots.map(spot => ({
-        ...spot,
-        active_reservations: spot.reservations?.filter(r => r.leaving_timestamp === null) || []
+
+      // Load spots
+      this.spots = res.data.spots.map(s => ({
+        ...s,
+        user: null // Will fill later
       }));
-      
+
+      // Fetch user data for occupied spots
+      for (let spot of this.spots) {
+        if (spot.status === "O" && spot.user_id) {
+          try {
+            const userRes = await axios.get(
+              `http://127.0.0.1:5000/api/users/${spot.user_id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            spot.user = userRes.data;
+          } catch (e) {
+            spot.user = null;
+          }
+        }
+      }
+
     } catch (err) {
       alert("Failed to load parking spot details");
     }

@@ -17,7 +17,6 @@
         <RouterLink to="/userhome" class="navbar-brand fw-bold text-white">🏠 Home</RouterLink>
         <div class="navbar-nav">
           <RouterLink to="/reserve" class="nav-link text-white">Book Parking</RouterLink>
-          
         </div>
       </div>
     </nav>
@@ -30,20 +29,21 @@
       >
         <div class="card-body">
           <h2 class="card-title text-center mb-4" style="color: turquoise;">
-            Your Parking Cost Summary
+            Your Parking Summary
           </h2>
 
-          <div class="text-center">
-            <img
-              :src="chartUrl"
-              alt="Parking Cost Summary Chart"
-              class="img-fluid rounded border"
-              style="max-width: 90%; border: 2px solid teal;"
-            />
+          <div class="text-center mb-4">
+            <canvas id="userChart" style="max-width: 90%;"></canvas>
           </div>
 
-          <div class="mt-4 text-center">
-            
+          <div class="mt-4 text-center" v-if="activeReservation">
+            <p style="color: lightgreen; font-weight: bold;">
+              Active Reservation: Spot #{{ activeReservation.spot_id }} started at {{ new Date(activeReservation.parking_timestamp).toLocaleString() }}
+            </p>
+          </div>
+
+          <div class="mt-2 text-center">
+            <p style="color: turquoise;">Total Reservations: {{ totalReservations }}</p>
           </div>
         </div>
       </div>
@@ -52,32 +52,84 @@
 </template>
 
 <script>
-import axios from "axios"
+import axios from "axios";
+import { Chart, registerables } from "chart.js";
+
+Chart.register(...registerables);
 
 export default {
   name: "UserSummaryChart",
   data() {
     return {
-      chartUrl: "",
-    }
+      totalReservations: 0,
+      activeReservation: null,
+      monthlyUsage: [],
+    };
   },
   async mounted() {
-    await this.fetchChart()
+    await this.fetchChartData();
   },
   methods: {
-    async fetchChart() {
+    async fetchChartData() {
       try {
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/user/summary", {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        this.chartUrl = res.data.chart_url2 // adjust key name to match your backend response
+        });
+
+        this.totalReservations = res.data.total_reservations;
+        this.activeReservation = res.data.active_reservation;
+        this.monthlyUsage = res.data.monthly_usage;
+
+        this.renderChart();
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to load summary chart.")
+        alert(err.response?.data?.message || "Failed to load summary chart.");
       }
     },
+    renderChart() {
+      if (!this.monthlyUsage || this.monthlyUsage.length === 0) return;
+
+      const ctx = document.getElementById("userChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: this.monthlyUsage.map((m) => m.month),
+          datasets: [
+            {
+              label: "Reservations",
+              data: this.monthlyUsage.map((m) => m.count),
+              backgroundColor: "teal",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: "Monthly Parking Usage",
+              color: "turquoise",
+              font: { size: 16 },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Number of Reservations", color: "white" },
+              ticks: { color: "white" },
+            },
+            x: {
+              title: { display: true, text: "Month", color: "white" },
+              ticks: { color: "white" },
+            },
+          },
+        },
+      });
+    },
   },
-}
+};
 </script>
 
 <style scoped>
@@ -94,7 +146,7 @@ export default {
     font-size: 1.2rem;
   }
 
-  img {
+  canvas {
     max-width: 100%;
   }
 }

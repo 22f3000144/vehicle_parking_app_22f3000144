@@ -10,6 +10,14 @@
           <RouterLink to="/userchart" class="nav-link text-white">Summary</RouterLink>
           <RouterLink to="/reserve" class="nav-link text-white">Book Parking</RouterLink>
           <a @click="logout" class="nav-link text-white" style="cursor:pointer;">Log-out</a>
+          <button class="btn btn-success" @click="exportHistory">
+            Export Parking History
+          </button> 
+          <button class="btn btn-primary ms-2"
+                  @click="checkExportStatus"
+                  :disabled="!taskId">
+            Check Export Status
+          </button>
         </div>
       </div>
     </nav>
@@ -105,7 +113,8 @@ export default {
 
   data() {
     return {
-      reservations: []
+      reservations: [], 
+      taskId: null
     }
   },
 
@@ -129,6 +138,45 @@ export default {
         console.error("Error loading history")
       }
     },
+    async checkExportStatus() {
+      if (!this.taskId) {
+        alert("Start export first.");
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `http://127.0.0.1:5000/api/export/status?task_id=${this.taskId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+        const data = await res.json();
+        alert(`Status: ${data.status}`);
+      } catch (err) {
+        alert("Something went wrong while checking status.");
+      }
+    },
+        async exportHistory() {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/export/history", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        this.exportTaskId = data.task_id;
+        alert("Export started. You can check the status.");
+      },
 
     async attachLotNames(history) {
       const token = localStorage.getItem("token")

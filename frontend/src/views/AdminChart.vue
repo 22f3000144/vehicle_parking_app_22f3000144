@@ -1,5 +1,6 @@
 <template>
   <div style="background-color: #f9f9f9; min-height: 100vh;">
+    
     <!-- Navbar -->
     <nav
       class="navbar navbar-expand-lg"
@@ -10,36 +11,28 @@
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <RouterLink to="/adminhome" class="nav-link text-white" style="cursor:pointer;">Home</RouterLink>
+              <RouterLink to="/adminhome" class="nav-link text-white">Home</RouterLink>
             </li>
             <li class="nav-item">
-              <RouterLink to="/userlist" class="nav-link text-white" style="cursor:pointer;">Users</RouterLink>
-            </li>
-            <li class="nav-item">
-              
+              <RouterLink to="/userlist" class="nav-link text-white">Users</RouterLink>
             </li>
           </ul>
         </div>
       </div>
     </nav>
 
-    <!-- Content Section -->
+    <!-- Chart Section -->
     <div class="container mt-5">
       <div class="card shadow">
-        <div class="card-body text-center">
-          <h2
-            class="mb-4"
-            style="color: teal; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,128,128,0.3);"
-          >
-            Reservation Records
+        <div class="card-body">
+          <h2 class="mb-4 text-center" style="color: teal; font-weight: bold;">
+            Parking Lot Usage Summary
           </h2>
 
-          <img
-            :src="chartUrl"
-            alt="Reservation Summary Chart"
-            class="img-fluid rounded"
-            style="max-width: 90%; border: 3px solid turquoise;"
-          />
+          <div class="text-center mb-3">
+            <canvas id="adminChart" style="max-width: 90%;"></canvas>
+          </div>
+
         </div>
       </div>
     </div>
@@ -47,32 +40,92 @@
 </template>
 
 <script>
-import axios from "axios"
+import axios from "axios";
+import { Chart, registerables } from "chart.js";
+
+Chart.register(...registerables);
 
 export default {
   name: "AdminSummaryChart",
   data() {
     return {
-      chartUrl: "",
-    }
+      lotUsage: [],
+      totalSpots: 0,
+      occupiedSpots: 0,
+      availableSpots: 0,
+    };
   },
+
   async mounted() {
-    await this.fetchChart()
+    await this.fetchChartData();
   },
+
   methods: {
-    async fetchChart() {
+    async fetchChartData() {
       try {
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/admin/summary", {
           headers: { Authorization: `Bearer ${token}` },
-        })
-        this.chartUrl = res.data.chart_url1 // Keep backend variable naming intact
+        });
+
+        this.lotUsage = res.data.lot_usage;
+        this.totalSpots = res.data.total_spots;
+        this.occupiedSpots = res.data.occupied_spots;
+        this.availableSpots = res.data.available_spots;
+
+        this.renderChart();
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to load admin summary chart.")
+        alert(err.response?.data?.message || "Failed to load admin summary chart.");
       }
     },
+
+    renderChart() {
+      if (!this.lotUsage || this.lotUsage.length === 0) return;
+
+      const ctx = document.getElementById("adminChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: this.lotUsage.map((l) => l.lot_name),
+          datasets: [
+            {
+              label: "Occupied Spots",
+              data: this.lotUsage.map((l) => l.used),
+              backgroundColor: "teal",
+            },
+            {
+              label: "Available Spots",
+              data: this.lotUsage.map((l) => l.total - l.used),
+              backgroundColor: "lightgreen",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "top" },
+            title: {
+              display: true,
+              text: "Parking Lot Occupancy",
+              font: { size: 18 },
+              color: "teal",
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#333" },
+            },
+            x: {
+              ticks: { color: "#333" },
+            },
+          },
+        },
+      });
+    },
   },
-}
+};
 </script>
 
 <style scoped>
@@ -81,7 +134,7 @@ export default {
 }
 
 .card {
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 @media (max-width: 768px) {
@@ -93,7 +146,7 @@ export default {
     font-size: 1.2rem;
   }
 
-  img {
+  canvas {
     max-width: 100%;
   }
 }

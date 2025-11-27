@@ -124,7 +124,7 @@ export default {
         this.parkingLots = res.data;
 
       } catch (err) {
-        console.log("wtf.. try agingyoou can do it..");
+        console.log("1");
       } finally {
         this.loading = false;
       }
@@ -146,7 +146,7 @@ export default {
         }
 
       } catch (err) {
-        console.log("wtf.. try agingyoou can do it..");
+        alert("Parkint Lot is Occupied");
       }
     },
 

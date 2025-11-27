@@ -3,6 +3,7 @@ from datetime import datetime
 from flask_security import UserMixin, RoleMixin
 from sqlalchemy import Enum
 import uuid
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -65,6 +66,7 @@ class ParkingLot(db.Model):
     pin_code = db.Column(db.String(10), nullable=False)
     max_spot = db.Column(db.Integer, nullable=False)
 
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     # One-to-Many: ParkingLot → ParkingSpot
     spots = db.relationship('ParkingSpot', backref='lot', cascade='all, delete-orphan', passive_deletes=True)
 

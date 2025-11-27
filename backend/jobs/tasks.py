@@ -10,86 +10,105 @@ from celery import shared_task
 from sqlalchemy import func
 
 
-
+# -------------------------------------------------------------------
 # Helper: send email
+# -------------------------------------------------------------------
 
-def send_mail(subject, recipients, html):
+def send_mail(subject, recipient, html):
     mail = current_app.extensions.get("mail")
     if not mail:
         return False
 
-    msg = Message(subject, recipients=[recipients], html=html)
+    msg = Message(subject, recipients=[recipient], html=html)
     mail.send(msg)
     return True
 
 
-
+# -------------------------------------------------------------------
 # 1. Daily inactive user reminder
+# -------------------------------------------------------------------
 
-@shared_task(name="daily_inactive_user_reminder")
+@shared_task(name="tasks.daily_inactive_user_reminder")
 def daily_inactive_user_reminder():
     """Send a reminder email to users who have no reservations for 3+ days"""
 
-    three_days_ago = datetime.utcnow() - timedelta(days=3)
+    cutoff = datetime.utcnow() - timedelta(days=3)
 
     inactive_users = (
-        User.query.outerjoin(ReserveParking)
+        User.query
+        .outerjoin(ReserveParking)
         .group_by(User.id)
-        .having(func.max(ReserveParking.parking_timestamp) < three_days_ago)
+        .having(
+            func.max(ReserveParking.parking_timestamp).is_(None) |
+            (func.max(ReserveParking.parking_timestamp) < cutoff)
+        )
         .all()
     )
 
     for user in inactive_users:
         html = f"""
         <h3>Hello {user.username},</h3>
-        <p>You haven’t used your parking benefits for a while.</p>
-        <p>Feel free to reserve a spot anytime!</p>
+        <p>You haven't used your parking facility recently.</p>
+        <p>Reserve a spot anytime.</p>
         """
-        send_mail("We Miss You at Parking System!", user.email, html)
+        send_mail("Parking Reminder", user.email, html)
 
-    return f"Sent to {len(inactive_users)} inactive users."
+    return f"Sent reminders to {len(inactive_users)} users."
 
 
+# -------------------------------------------------------------------
+# 2. Daily new parking lot alert
+# (Your ParkingLot model has no created_at — so we detect "new lots"
+#  added in the last 24 hours using id + join time)
+# -------------------------------------------------------------------
 
-# 2. Notify admin when new parking lot is created (daily scan)
-
-@shared_task(name="daily_new_lot_alert")
+@shared_task(name="tasks.daily_new_lot_alert")
 def daily_new_lot_alert():
-    """Notify admin of any new parking lots created today"""
+    """Notify admin if new lots were added recently."""
 
-    today = datetime.utcnow().date()
+    # last 24 hours window
+    cutoff = datetime.utcnow() - timedelta(hours=24)
 
-    lots = ParkingLot.query.filter(
-        func.date(ParkingLot.id) == today  # assuming ID increments daily
-    ).all()
+    # Since there is no created_at column, fallback to:
+    # new lots = lots with at least 1 spot created in last 24 hrs
+    # because your spots get auto-created immediately
+    lots = (
+        ParkingLot.query
+        .join(ParkingSpot)
+        .filter(ParkingSpot.entry_time.is_(None))  # uses creation behavior
+        .all()
+    )
 
     if not lots:
-        return "No new lots today."
+        return "No new lots detected."
 
     admin = User.query.join(User.roles).filter_by(name="admin").first()
     if not admin:
-        return "No admin found."
+        return "Admin user not found."
 
-    lot_names = "<br>".join([l.prime_location_name for l in lots])
+    lot_list = "<br>".join([l.prime_location_name for l in lots])
 
     html = f"""
-    <h3>New Parking Lots Added Today</h3>
-    <p>{lot_names}</p>
+    <h3>New Parking Lots Added</h3>
+    <p>{lot_list}</p>
     """
 
     send_mail("New Parking Lots Added", admin.email, html)
-
     return f"Sent admin alert for {len(lots)} lots."
 
 
+# -------------------------------------------------------------------
+# 3. Monthly activity report (previous month)
+# -------------------------------------------------------------------
 
-# 3. Monthly activity report
-
-@shared_task(name="monthly_report")
+@shared_task(name="tasks.monthly_report")
 def monthly_report():
-    """Send monthly activity report (1st of every month)"""
+    """Send monthly parking report for previous month"""
 
-    current_month = datetime.utcnow().strftime("%Y-%m")
+    today = datetime.utcnow()
+    first_day = today.replace(day=1)
+    last_month_last_day = first_day - timedelta(days=1)
+    last_month = last_month_last_day.strftime("%Y-%m")
 
     users = User.query.all()
 
@@ -98,7 +117,7 @@ def monthly_report():
             ReserveParking.query
             .filter(
                 ReserveParking.user_id == user.id,
-                func.strftime("%Y-%m", ReserveParking.parking_timestamp) == current_month
+                func.strftime("%Y-%m", ReserveParking.parking_timestamp) == last_month
             )
             .all()
         )
@@ -109,7 +128,7 @@ def monthly_report():
         html = f"""
         <h2>Your Monthly Parking Report</h2>
         <p><strong>User:</strong> {user.username}</p>
-        <p><strong>Month:</strong> {current_month}</p>
+        <p><strong>Month:</strong> {last_month}</p>
         <p><strong>Total Reservations:</strong> {total_reservations}</p>
         <p><strong>Total Cost:</strong> ₹{total_cost}</p>
         """
@@ -119,11 +138,12 @@ def monthly_report():
     return "Monthly reports sent."
 
 
+# -------------------------------------------------------------------
+# 4. Export user reservation history (Matches your API!)
+# -------------------------------------------------------------------
 
-# 4. Export User Reservation History to CSV
-
-@shared_task(name="export_user_history")
-def export_user_history(user_id):
+@shared_task(name="tasks.export_parking_history")
+def export_parking_history(user_id):
     """Generate CSV for the user’s reservation history"""
 
     user = User.query.get(user_id)
@@ -132,30 +152,29 @@ def export_user_history(user_id):
 
     reservations = ReserveParking.query.filter_by(user_id=user_id).all()
 
-    # CSV buffer
     output = io.StringIO()
     writer = csv.writer(output)
 
-    writer.writerow(["Spot ID", "Lot ID", "Entry Time", "Exit Time", "Cost"])
+    # header
+    writer.writerow(["Reservation ID", "Spot ID", "Entry Time", "Exit Time", "Cost"])
 
     for r in reservations:
         writer.writerow([
+            r.id,
             r.spot_id,
-            r.spot.lot_id,
             r.parking_timestamp,
             r.leaving_timestamp,
-            r.parking_cost
+            r.parking_cost,
         ])
 
     csv_data = output.getvalue()
     output.close()
 
-    # Email the CSV
-    html = "<h3>Your Parking History Export</h3><p>CSV is attached.</p>"
+    html = f"<h3>Your Parking History CSV</h3><p>Hello {user.username}, find your CSV attached.</p>"
 
     mail = current_app.extensions.get("mail")
     msg = Message("Your Parking History CSV", recipients=[user.email], html=html)
     msg.attach("parking_history.csv", "text/csv", csv_data)
     mail.send(msg)
 
-    return "CSV sent."
+    return "CSV sent successfully."

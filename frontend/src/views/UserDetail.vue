@@ -8,6 +8,7 @@
           <router-link to="/adminhome" class="nav-link d-inline text-white">Home</router-link>
           <router-link to="/adminchart" class="nav-link d-inline text-white">Summary</router-link>
         </div>
+
         <button @click="logout" class="btn btn-outline-light btn-sm">Log-out</button>
       </div>
     </nav>

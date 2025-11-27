@@ -1,6 +1,8 @@
 import os
 from datetime import timedelta
 
+from celery.schedules import crontab
+
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 class Config:
     DEBUG = False
@@ -25,8 +27,8 @@ class Config:
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_HOST = "localhost"
     CACHE_REDIS_PORT = 6379
-    CACHE_REDIS_DB = 1
-    CACHE_REDIS_URL = "redis://localhost:6379/1"
+    CACHE_REDIS_DB = 3
+    CACHE_REDIS_URL = "redis://localhost:6379/3"
     CACHE_DEFAULT_TIMEOUT = 60
 
 
@@ -64,4 +66,17 @@ class LocalDevelopmentConfig(Config):
 
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
-
+    CELERY_BEAT_SCHEDULE = {
+        "daily-inactive-user-reminder": {
+            "task": "tasks.daily_inactive_user_reminder",
+            "schedule": crontab(hour=18, minute=0),
+        },
+        "new-lot-alert-job": {
+            "task": "tasks.daily_new_lot_alert",
+            "schedule": crontab(hour=18, minute=5),
+        },
+        "monthly-report-job": {
+            "task": "tasks.monthly_report",
+            "schedule": crontab(day_of_month="1", hour=1, minute=0),
+        },
+    }

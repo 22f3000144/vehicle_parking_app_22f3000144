@@ -2,6 +2,7 @@
   <div class="container mt-4" style="max-width: 600px;">
     <div class="card shadow-sm p-4">
       <h3 class="text-center mb-3">Edit Parking Lot</h3>
+
       <form @submit.prevent="updateLot">
         <div class="mb-3">
           <label>Prime Location</label>
@@ -29,7 +30,14 @@
         </div>
 
         <button class="btn btn-warning w-100" type="submit">Update</button>
-         <RouterLink to="/adminhome" class="nav-link text-white" style="cursor:pointer;">Go Back</RouterLink>
+
+        <RouterLink
+          to="/adminhome"
+          class="nav-link text-center mt-3"
+          style="cursor: pointer;"
+        >
+          Go Back
+        </RouterLink>
       </form>
     </div>
   </div>
@@ -50,33 +58,45 @@ export default {
       }
     };
   },
+
   methods: {
+    // Fetch lot details by ID
     async fetchLot() {
       try {
         const token = localStorage.getItem("token");
         const id = this.$route.params.id;
-        const res = await axios.get(`http://127.0.0.1:5000/api/lots/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+
+        const res = await axios.get(
+          `http://127.0.0.1:5000/api/lots/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
         this.lot = res.data;
       } catch (err) {
         alert(err.response?.data?.message || "Failed to load lot details.");
       }
     },
+
+    // Update parking lot
     async updateLot() {
       try {
         const token = localStorage.getItem("token");
         const id = this.$route.params.id;
-        await axios.put(`http://127.0.0.1:5000/lots/${id}`, this.lot, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+
+        await axios.put(
+          `http://127.0.0.1:5000/api/lots/${id}`,
+          this.lot,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
         alert("Parking lot updated successfully.");
-        this.$router.push("/admin");
+        this.$router.push("/adminhome");
       } catch (err) {
         alert(err.response?.data?.message || "Failed to update parking lot.");
       }
     }
   },
+
   mounted() {
     this.fetchLot();
   }

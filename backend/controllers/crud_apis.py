@@ -10,6 +10,8 @@ from data.models import db, User, Role, UserRole, ParkingLot, ParkingSpot, Reser
 from sqlalchemy import func
 
 
+
+
 # Helper: admin check (safe, simple)
 
 def is_admin(user_id):
@@ -358,55 +360,63 @@ class ReleaseParkingAPI(Resource):
 
     @jwt_required()
     def post(self):
-        user_id = get_jwt_identity()
         data = request.get_json()
 
-        if not data or "spot_id" not in data:
-            return make_response(jsonify({"message": "spot_id is required"}), 400)
+        # Accept both keys for safety
+        reservation_id = data.get("reservation_id") or data.get("id")
+        if not reservation_id:
+            return make_response(jsonify({"message": "Reservation ID required"}), 400)
 
-        spot = ParkingSpot.query.get(data["spot_id"])
+        # Get reservation
+        reservation = ReserveParking.query.get(reservation_id)
+        if not reservation:
+            return make_response(jsonify({"message": "Reservation not found"}), 404)
+
+        # Already released?
+        if reservation.leaving_timestamp is not None:
+            return make_response(jsonify({"message": "Already released"}), 400)
+
+        # Must have start time
+        if reservation.parking_timestamp is None:
+            return make_response(jsonify({"message": "Parking has not started"}), 400)
+
+        # Get spot
+        spot = ParkingSpot.query.get(reservation.spot_id)
         if not spot:
             return make_response(jsonify({"message": "Spot not found"}), 404)
 
-        if spot.user_id != user_id and not is_admin(user_id):
-            return make_response(jsonify({"message": "You do not own this reservation"}), 403)
+        # Ensure spot is occupied
+        if spot.status != "O":
+            return make_response(jsonify({"message": "Spot is not occupied"}), 400)
 
-        try:
-            lot = ParkingLot.query.get(spot.lot_id)
+        # Set leaving timestamp
+        now = datetime.utcnow()
+        reservation.leaving_timestamp = now
 
-            reservation = ReserveParking.query.filter_by(
-                spot_id=spot.id,
-                user_id=user_id,
-                leaving_timestamp=None
-            ).first()
+        # Calculate duration
+        duration_minutes = int((now - reservation.parking_timestamp).total_seconds() // 60)
+        if duration_minutes < 1:
+            duration_minutes = 1  # minimum 1 minute
 
-            if reservation:
-                reservation.leaving_timestamp = datetime.utcnow()
+        # Cost calculation
+        lot = ParkingLot.query.get(spot.lot_id)
+        hourly_price = lot.price or 0
+        cost = (duration_minutes / 60) * hourly_price
+        cost = round(cost, 2)
 
-                seconds = (reservation.leaving_timestamp - reservation.parking_timestamp).total_seconds()
-                duration_minutes = int(seconds // 60)
+        reservation.parking_cost = cost
 
-                hours = max(1, int(seconds // 3600))
-                cost = hours * lot.price
-                reservation.parking_cost = cost
+        # Release spot
+        spot.status = "A"
 
-            spot.status = 'A'
-            spot.user_id = None
-            spot.exit_time = datetime.utcnow()
+        db.session.commit()
 
-            db.session.commit()
+        return make_response(jsonify({
+            "message": "Parking released successfully",
+            "duration_minutes": duration_minutes,
+            "cost": cost
+        }), 200)
 
-            return make_response(jsonify({
-                "message": "Spot released",
-                "spot_number": spot.spot_number,
-                "lot_name": lot.prime_location_name,
-                "duration_minutes": duration_minutes,
-                "cost": cost
-            }), 200)
-
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return make_response(jsonify({"message": str(e)}), 500)
 
 
 class ReserveHistoryAPI(Resource):
@@ -529,7 +539,6 @@ class UserSummaryChartAPI(Resource):
             monthly.append({"month": month_str, "count": count})
 
         return make_response(jsonify({"total_reservations": total_reservations, "active_reservation": active_data, "monthly_usage": list(reversed(monthly))}), 200)
-
 
 class UserParkingStatusAPI(Resource):
 

@@ -129,7 +129,9 @@ app, api, celery, cache, mail = create_app()
 
 from controllers.auth_apis import *
 from controllers.crud_apis import *
+from jobs.tasks import *
 
+# celery -A app.celery worker --loglevel=info
 @app.route("/check")
 def is_run():
     return "Backend is Running"
