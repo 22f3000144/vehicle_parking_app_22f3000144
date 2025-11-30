@@ -126,7 +126,7 @@ export default {
     async fetchHistory() {
       try {
         const token = localStorage.getItem("token")
-
+        console.log(token)
         const res = await axios.get("http://127.0.0.1:5000/api/reservations", {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -219,6 +219,7 @@ export default {
     async releaseParking(reservationId) {
       try {
         const token = localStorage.getItem("token");
+        console.log(token)
 
         const res = await axios.post(
           "http://127.0.0.1:5000/api/release",
